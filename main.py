@@ -1,3 +1,11 @@
+"""
+(1) Compare a naive and sophisticated model
+(2) Time for a sophisticated model to reach the target population
+(3) Compare two sophisticated population models
+(4) Generate detailed projections formatted as columns
+(5) Model increases in fission-event frequency
+"""
+
 def conv_time(fr:str, fr_amt:int, to:str):
     sec = {"d": 86400, "hd": 86400/2, "qd": 86400/4, "h": 3600, "m": 60, "s": 1}
     return (sec[fr.lower()] / sec[to.lower()]) * fr_amt
@@ -14,6 +22,12 @@ def pop_sz(init_pop:float, gr_rate:list[float, str], proj_time:list[float, str],
         fiss_rate, fr_tu = fiss_rate
         fiss_rate = conv_time(fr_tu, fiss_rate, pt_tu)
         return round(init_pop * (1 + gr_rate / fiss_rate) ** (fiss_rate * proj_time))
+    
+def pop_target():
+    pass
+
+def cmp_soph():
+    pass
 
 def inp_tf(prompt:str, ve_msg:str = "Invalid. First value must be a number."):
     while True:
