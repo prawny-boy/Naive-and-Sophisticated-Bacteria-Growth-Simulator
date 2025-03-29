@@ -6,10 +6,14 @@ def pop_sz(init_pop:float, gr_rate:list[float, str], proj_time:list[float, str],
     gr_rate, gr_tu = gr_rate
     proj_time, pt_tu = proj_time
     gr_rate = conv_time(gr_tu, gr_rate, pt_tu)
+    init_pop = float(init_pop)
     if fiss_rate == -1:
-        return round(float(init_pop) * (1 + (gr_rate / 100) * proj_time))
+        return round(init_pop * (1 + (gr_rate / 100) * proj_time))
     else:
-        pass
+        # A = P(1 + r/n)^(nt)
+        fiss_rate, fr_tu = fiss_rate
+        fiss_rate = conv_time(fr_tu, fiss_rate, pt_tu)
+        return round(init_pop * (1 + gr_rate / fiss_rate) ** (fiss_rate * proj_time))
 
 def inp_tf(prompt:str, ve_msg:str = "Invalid. First value must be a number."):
     while True:
