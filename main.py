@@ -18,22 +18,27 @@ def inp_tf(prompt:str):
             a = inp[0]
             u = inp[1]
             if u not in ["d", "hd", "qd", "h", "m", "s"]:
-                print("Use correct unit. (d, hd, qd, h, m, s)")
+                print("Invalid. Use correct units. (d, hd, qd, h, m, s)")
                 continue
             a = float(a)
             return [a, u]
         except IndexError:
-            print("Enter in format 'number<space>unit'.")
+            print("Invalid. Enter in format 'number<space>unit'.")
         except ValueError:
-            print("First value must be a number.")
+            print("Invalid. First value must be a number.")
 
+def inp_num(prompt:str):
+    while True:
+        try:
+            return int(input(prompt))
+        except:
+            print("Invalid. Enter a number.")
 
 if __name__ == "__main__":
-    init_pop = input("Enter the initial population: ")
+    init_pop = inp_num("Enter the initial population: ")
     gr_rate = inp_tf("Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ")
 
-    print("Future projection timeframe:")
-    proj_time = inp_tf("Enter the project time and its time unit (d, hd, qd, h, m, s): ")
+    proj_time = inp_tf("Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
 
     result = pop_sz(init_pop, gr_rate, proj_time)
     print(f"Population after {proj_time[0]} {proj_time[1]}: {result}")
