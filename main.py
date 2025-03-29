@@ -11,21 +11,21 @@ def pop_sz(init_pop:float, gr_rate:list[float, str], proj_time:list[float, str],
     else:
         pass
 
-def inp_tf(prompt:str):
+def inp_tf(prompt:str, ve_msg:str = "Invalid. First value must be a number."):
     while True:
         try:
             inp = input(prompt).split()
             a = inp[0]
             u = inp[1]
             if u not in ["d", "hd", "qd", "h", "m", "s"]:
-                print("Invalid. Use correct units. (d, hd, qd, h, m, s)")
+                print("Invalid. Incorrect unit. (d, hd, qd, h, m, s)")
                 continue
             a = float(a)
             return [a, u]
         except IndexError:
             print("Invalid. Enter in format 'number<space>unit'.")
         except ValueError:
-            print("Invalid. First value must be a number.")
+            print(ve_msg)
 
 def inp_num(prompt:str):
     while True:
@@ -36,7 +36,7 @@ def inp_num(prompt:str):
 
 if __name__ == "__main__":
     init_pop = inp_num("Enter the initial population: ")
-    gr_rate = inp_tf("Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ")
+    gr_rate = inp_tf("Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
 
     proj_time = inp_tf("Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
 
