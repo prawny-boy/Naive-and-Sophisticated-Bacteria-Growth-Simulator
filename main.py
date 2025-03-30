@@ -5,47 +5,47 @@
 (4) Generate detailed projections formatted as columns
 (5) Model increases in fission-event frequency
 """
+seconds_in_unit = {"day": 86400, "half_day": 86400 / 2, "quarter_day": 86400 / 4, "hour": 3600, "minute": 60, "second": 1,}
 
-def conv_time(fr:str, fr_amt:int, to:str):
-    sec = {"d": 86400, "hd": 86400/2, "qd": 86400/4, "h": 3600, "m": 60, "s": 1}
-    return (sec[fr.lower()] / sec[to.lower()]) * fr_amt
+def convert_time(from_unit: str, from_amount: int, to_unit: str):
+    return (seconds_in_unit[from_unit.lower()] / seconds_in_unit[to_unit.lower()]) * from_amount
 
-def pop_sz(init_pop:float, gr_rate:list[float, str], proj_time:list[float, str], fiss_rate:list[float, str] = -1):
-    gr_rate, gr_tu = gr_rate
-    proj_time, pt_tu = proj_time
-    gr_rate = conv_time(gr_tu, gr_rate, pt_tu)
-    init_pop = float(init_pop)
-    if fiss_rate == -1:
-        return round(init_pop * (1 + (gr_rate / 100) * proj_time))
+def calculate_population_size(initial_population: float, growth_rate: list[float, str], projection_time: list[float, str], fission_rate: list[float, str] = -1):
+    growth_rate_value, growth_rate_unit = growth_rate
+    projection_time_value, projection_time_unit = projection_time
+    growth_rate_value = convert_time(growth_rate_unit, growth_rate_value, projection_time_unit)
+    initial_population = float(initial_population)
+    if fission_rate == -1:
+        return round(initial_population * (1 + (growth_rate_value / 100) * projection_time_value))
     else:
         # A = P(1 + r/n)^(nt)
-        fiss_rate, fr_tu = fiss_rate
-        fiss_rate = conv_time(fr_tu, fiss_rate, pt_tu)
-        return round(init_pop * (1 + gr_rate / fiss_rate) ** (fiss_rate * proj_time))
+        fission_rate_value, fission_rate_unit = fission_rate
+        fission_rate_value = convert_time(fission_rate_unit, fission_rate_value, projection_time_unit)
+        return round(initial_population * (1 + growth_rate_value / fission_rate_value) ** (fission_rate_value * projection_time_value))
     
-def pop_target():
+def calculate_population_target():
     pass
 
-def cmp_soph():
+def compare_sophisticated_models():
     pass
 
-def inp_tf(prompt:str, ve_msg:str = "Invalid. First value must be a number."):
+def input_time_with_format(prompt: str, validation_error_message: str = "Invalid. First value must be a number."):
     while True:
         try:
-            inp = input(prompt).split()
-            a = inp[0]
-            u = inp[1]
-            if u not in ["d", "hd", "qd", "h", "m", "s"]:
-                print("Invalid. Incorrect unit. (d, hd, qd, h, m, s)")
+            user_input = input(prompt).split()
+            amount = user_input[0]
+            unit = user_input[1]
+            if unit not in seconds_in_unit:
+                print(f"Invalid. Incorrect unit. {list(seconds_in_unit.keys())}")
                 continue
-            a = float(a)
-            return [a, u]
+            amount = float(amount)
+            return [amount, unit]
         except IndexError:
             print("Invalid. Enter in format 'number<space>unit'.")
         except ValueError:
-            print(ve_msg)
+            print(validation_error_message)
 
-def inp_num(prompt:str):
+def input_number_value(prompt: str):
     while True:
         try:
             return int(input(prompt))
@@ -53,10 +53,10 @@ def inp_num(prompt:str):
             print("Invalid. Enter a number.")
 
 if __name__ == "__main__":
-    init_pop = inp_num("Enter the initial population: ")
-    gr_rate = inp_tf("Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+    initial_population = input_number_value("Enter the initial population: ")
+    growth_rate = input_time_with_format(f"Enter the growth rate (%) and its time unit {list(seconds_in_unit.keys())}: ", "Invalid. First value must be a number. (E.g. 7% = 7)")
 
-    proj_time = inp_tf("Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
+    projection_time = input_time_with_format(f"Enter the projection time and its time unit {list(seconds_in_unit.keys())}: ")
 
-    result = pop_sz(init_pop, gr_rate, proj_time)
-    print(f"Population after {proj_time[0]} {proj_time[1]}: {result}")
+    result = calculate_population_size(initial_population, growth_rate, projection_time)
+    print(f"Population after {projection_time[0]} {projection_time[1]}: {result}")
