@@ -76,13 +76,13 @@ class GetData:
     def target_population():
         pass
 
-def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount = TimeAmount(-1, "h"), variable_to_output = "population"):
+def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount, variable_to_output = "population"):
     initial_population = float(initial_population)
     growth_rate.quantity /= 100
     growth_rate.convert(projection_time.get_unit())
 
     if variable_to_output == "population":
-        if fission_frequency.get_quantity() == -1:
+        if fission_frequency == None:
             return round(initial_population * ((1 + growth_rate.get_quantity()) * projection_time.get_quantity()))
         else:
             if fission_frequency.get_quantity() == 1:
@@ -156,7 +156,7 @@ def run_module(module_number: int):
             fission_frequency = model[3] if len(model) > 3 else None
             
             if model_type == "naive":
-                result = calculate_population_size(initial_population, growth_rate, projection_time)
+                result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
                 print(f"Naive Model: {result}")
             elif model_type == "sophisticated":
                 result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
