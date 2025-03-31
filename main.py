@@ -1,12 +1,5 @@
-"""
-(1) Compare a naive and sophisticated model
-(2) Time for a sophisticated model to reach the target population
-(3) Compare two sophisticated population models
-(4) Generate detailed projections formatted as columns
-(5) Model increases in fission-event frequency
-"""
-seconds_in_unit = {"d": 86400, "hd": 86400 / 2, "qd": 86400 / 4, "h": 3600, "m": 60, "s": 1,}
-modules_settings = [
+SECONDS_IN_UNIT = {"d": 86400, "hd": 86400 / 2, "qd": 86400 / 4, "h": 3600, "m": 60, "s": 1,}
+MODULE_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
         "output": "population",
@@ -49,7 +42,7 @@ class TimeAmount:
         self.unit = unit
     
     def convert(self, to_unit: str):
-        converted = (seconds_in_unit[self.unit.lower()] / seconds_in_unit[to_unit.lower()]) * self.quantity
+        converted = (SECONDS_IN_UNIT[self.unit.lower()] / SECONDS_IN_UNIT[to_unit.lower()]) * self.quantity
         self.quantity = converted
         self.unit = to_unit
         return converted
@@ -96,8 +89,8 @@ def input_time_amount(prompt: str, validation_error_message: str = "Invalid. Fir
             user_input = input(prompt).split()
             amount = user_input[0]
             unit = user_input[1]
-            if unit not in seconds_in_unit:
-                print(f"Invalid. Incorrect unit. {list(seconds_in_unit.keys())}")
+            if unit not in list(SECONDS_IN_UNIT.keys()):
+                print(f"Invalid. Incorrect unit. {list(SECONDS_IN_UNIT.keys())}")
                 continue
             amount = float(amount)
             return TimeAmount(amount, unit)
@@ -112,6 +105,17 @@ def input_number_value(prompt: str):
             return int(input(prompt))
         except:
             print("Invalid. Enter a number.")
+
+def run_module(module_number: int):
+    # run the module based on the module number and settings
+    """
+    (1) Compare a naive and sophisticated model
+    (2) Time for a sophisticated model to reach the target population
+    (3) Compare two sophisticated population models
+    (4) Generate detailed projections formatted as columns
+    (5) Model increases in fission-event frequency
+    """
+    pass
 
 if __name__ == "__main__":
     print("Naive Model")
