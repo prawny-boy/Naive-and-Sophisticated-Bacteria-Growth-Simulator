@@ -5,34 +5,34 @@ MODULE_SETTINGS = [
         "output": "population",
         "naive_models": 1,
         "sophisticated_models": 1,
-        "special": {"format": False, "list": False},
+        "special": {"format": False, "list": False, "no_projection": False},
     },
     {
         "name": "Time for a sophisticated model to reach the target population",
         "output": "time",
         "naive_models": 0,
         "sophisticated_models": 1,
-        "special": {"format": False, "list": True},
+        "special": {"format": False, "list": True, "no_projection": False},
     },
     {
         "name": "Compare two sophisticated population models",
         "output": "population",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "special": {"format": False, "list": False},
+        "special": {"format": False, "list": False, "no_projection": False},
     },
     {
         "name": "Generate detailed projections formatted as columns",
         "output": "population",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "special": {"format": True, "list": False},
+        "special": {"format": True, "list": False, "no_projection": False},
     },
     {
         "name": "Model increases in fission-event frequency",
         "output": "population",
         "sophisticated_models": 1,
-        "special": {"format": False, "list": True},
+        "special": {"format": False, "list": True, "no_projection": False},
     },
 ]
 
@@ -59,14 +59,14 @@ class GetData:
         print(f"\nNaive Model {number}")
         initial_population = input_number_value("Enter the initial population: ")
         growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-        return initial_population, growth_rate
+        return (initial_population, growth_rate)
 
     def sophisticated_model(number = ""):
         print(f"\nSophisticated Model {number}")
         initial_population = input_number_value("Enter the initial population: ")
         growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
         fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
-        return initial_population, growth_rate, fission_frequency
+        return (initial_population, growth_rate, fission_frequency)
 
     def projection_time():
         print("\nProjection Timeframe")
@@ -115,6 +115,10 @@ def input_number_value(prompt: str):
         except:
             print("Invalid. Enter a number.")
 
+def summary(data, settings, projection_time):
+    # write a summary of what the user inputted
+    print(data)
+
 def run_module(module_number: int):
     # run the module based on the module number and settings
     """
@@ -124,19 +128,39 @@ def run_module(module_number: int):
     (4) Generate detailed projections formatted as columns
     (5) Model increases in fission-event frequency
     """
-    pass
+    settings = MODULE_SETTINGS[module_number - 1]
+    print(f"\nModule {module_number}: {settings['name']}")
 
+    data = []
+    for i in range(settings["naive_models"]):
+        data.append(tuple(["naive"]) + GetData.naive_model(i + 1))
+    for i in range(settings["sophisticated_models"]):
+        data.append(tuple(["sophisticated"]) + GetData.sophisticated_model(i + 1))
+
+    if len(data) > 0 and not settings["special"]["no_projection"]:
+        projection_time = GetData.projection_time()
+
+    summary(data, settings, projection_time)
+
+    # Results
+    if settings["special"]["format"]:
+        # format the output as columns
+        pass
+    elif settings["special"]["list"]:
+        # list the output
+        pass
+    else:
+        # print the results based on the output type
+        for model in data:
+            model_type, initial_population, growth_rate = model[:3]
+            fission_frequency = model[3] if len(model) > 3 else None
+            
+            if model_type == "naive":
+                result = calculate_population_size(initial_population, growth_rate, projection_time)
+                print(f"Naive Model: {result}")
+            elif model_type == "sophisticated":
+                result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
+                print(f"Sophisticated Model: {result}")
 
 if __name__ == "__main__":
-    n_initial_population, n_growth_rate = GetData.naive_model()
-    
-    s_initial_population, s_growth_rate, fission_frequency = GetData.sophisticated_model()
-
-    projection_time = GetData.projection_time()
-
-    n_result = calculate_population_size(n_initial_population, n_growth_rate, projection_time)
-    s_result = calculate_population_size(s_initial_population, s_growth_rate, projection_time, fission_frequency)
-
-    print(f"Population after {projection_time.get_quantity()} {projection_time.get_unit()}")
-    print(f"Naive population: {n_result}")
-    print(f"Sophisticated population: {s_result}")
+    run_module(1)
