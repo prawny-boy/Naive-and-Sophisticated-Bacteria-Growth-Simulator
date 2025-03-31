@@ -24,27 +24,35 @@ class TimeAmount:
     def get_unit(self):
         return self.unit
 
-def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, variable_to_output = "population", output_unit = "h", fission_rate: TimeAmount = -1):
-    # growth_rate is % per unit
-    growth_rate.quantity /= 100
-    growth_rate.quantity *= (seconds_in_unit[output_unit] / seconds_in_unit[growth_rate.unit])
-    print(growth_rate.get_quantity())
-    projection_time.convert(output_unit)
-    print(projection_time.get_quantity())
-    initial_population = float(initial_population)
-    if variable_to_output == "population":
-        if fission_rate == -1:
-            return round(initial_population * (1 + (growth_rate.get_quantity()) * projection_time.get_quantity()))
-        else:
-            # A = P(1 + r/n)^(nt)
-            fission_rate.convert(output_unit)
-            return round(initial_population * (1 + growth_rate.get_quantity() / fission_rate.get_quantity()) ** (fission_rate.get_quantity() * projection_time.get_quantity()))
-    
-def calculate_population_target():
-    pass
+class GetData:
+    # to store all the inputting functions into a class for easier sorting and calling
+    def naive_model():
+        pass
 
-def compare_sophisticated_models():
-    pass
+    def sophisticated_model():
+        pass
+
+    def projection_time():
+        pass
+
+    def target_population():
+        pass
+
+def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount = TimeAmount(-1, "h"), variable_to_output = "population"):
+    initial_population = float(initial_population)
+    growth_rate.quantity /= 100
+    growth_rate.convert(projection_time.get_unit())
+
+    if variable_to_output == "population":
+        if fission_frequency.get_quantity() == -1:
+            return round(initial_population * ((1 + growth_rate.get_quantity()) * projection_time.get_quantity()))
+        else:
+            if fission_frequency.get_quantity() == 1:
+                # convert to same unit as projected time
+                fission_frequency.convert(projection_time.get_unit())
+            f = fission_frequency.get_quantity()
+            return round(initial_population * ((1 + growth_rate.get_quantity() / f) ** (f * projection_time.get_quantity())), 2)
+        
 
 def input_time_amount(prompt: str, validation_error_message: str = "Invalid. First value must be a number."):
     while True:
@@ -70,10 +78,20 @@ def input_number_value(prompt: str):
             print("Invalid. Enter a number.")
 
 if __name__ == "__main__":
-    initial_population = input_number_value("Enter the initial population: ")
-    growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit {list(seconds_in_unit.keys())}: ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+    print("Naive Model")
+    n_initial_population = input_number_value("Enter the initial population: ")
+    n_growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+    print("\nSophisticated Model")
+    s_initial_population = input_number_value("Enter the initial population: ")
+    s_growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+    fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
 
-    projection_time = input_time_amount(f"Enter the projection time and its time unit {list(seconds_in_unit.keys())}: ")
+    print("\nFuture Projection Timeframe")
+    projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
 
-    result = calculate_population_size(initial_population, growth_rate, projection_time)
-    print(f"Population after {projection_time.get_quantity()} {projection_time.get_unit()}: {result}")
+    n_result = calculate_population_size(n_initial_population, n_growth_rate, projection_time)
+    s_result = calculate_population_size(s_initial_population, s_growth_rate, projection_time, fission_frequency)
+
+    print(f"Population after {projection_time.get_quantity()} {projection_time.get_unit()}")
+    print(f"Naive population: {n_result}")
+    print(f"Sophisticated population: {s_result}")
