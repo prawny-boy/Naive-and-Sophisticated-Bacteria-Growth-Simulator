@@ -12,9 +12,7 @@ class TimeAmount:
         self.quantity = quantity
         self.unit = unit
     
-    def convert(self, to_unit: str, percentage:bool = False):
-        if percentage:
-            self.quantity /= 100
+    def convert(self, to_unit: str):
         converted = (seconds_in_unit[self.unit.lower()] / seconds_in_unit[to_unit.lower()]) * self.quantity
         self.quantity = converted
         self.unit = to_unit
@@ -27,10 +25,12 @@ class TimeAmount:
         return self.unit
 
 def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, variable_to_output = "population", output_unit = "h", fission_rate: TimeAmount = -1):
-    growth_rate.convert(output_unit, True)
-    # print(growth_rate.get_quantity())
+    # growth_rate is % per unit
+    growth_rate.quantity /= 100
+    growth_rate.quantity *= (seconds_in_unit[output_unit] / seconds_in_unit[growth_rate.unit])
+    print(growth_rate.get_quantity())
     projection_time.convert(output_unit)
-    # print(projection_time.get_quantity())
+    print(projection_time.get_quantity())
     initial_population = float(initial_population)
     if variable_to_output == "population":
         if fission_rate == -1:
