@@ -55,14 +55,23 @@ class TimeAmount:
 
 class GetData:
     # to store all the inputting functions into a class for easier sorting and calling
-    def naive_model():
-        pass
+    def naive_model(number = ""):
+        print(f"\nNaive Model {number}")
+        initial_population = input_number_value("Enter the initial population: ")
+        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+        return initial_population, growth_rate
 
-    def sophisticated_model():
-        pass
+    def sophisticated_model(number = ""):
+        print(f"\nSophisticated Model {number}")
+        initial_population = input_number_value("Enter the initial population: ")
+        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+        fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
+        return initial_population, growth_rate, fission_frequency
 
     def projection_time():
-        pass
+        print("\nProjection Timeframe")
+        projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
+        return projection_time
 
     def target_population():
         pass
@@ -117,17 +126,13 @@ def run_module(module_number: int):
     """
     pass
 
-if __name__ == "__main__":
-    print("Naive Model")
-    n_initial_population = input_number_value("Enter the initial population: ")
-    n_growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-    print("\nSophisticated Model")
-    s_initial_population = input_number_value("Enter the initial population: ")
-    s_growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-    fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
 
-    print("\nFuture Projection Timeframe")
-    projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
+if __name__ == "__main__":
+    n_initial_population, n_growth_rate = GetData.naive_model()
+    
+    s_initial_population, s_growth_rate, fission_frequency = GetData.sophisticated_model()
+
+    projection_time = GetData.projection_time()
 
     n_result = calculate_population_size(n_initial_population, n_growth_rate, projection_time)
     s_result = calculate_population_size(s_initial_population, s_growth_rate, projection_time, fission_frequency)
