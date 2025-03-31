@@ -5,34 +5,34 @@ MODULE_SETTINGS = [
         "output": "population",
         "naive_models": 1,
         "sophisticated_models": 1,
-        "special": {"format": False, "list": False, "no_projection": False},
+        "special": {"no_projection": False},
     },
     {
         "name": "Time for a sophisticated model to reach the target population",
         "output": "time",
         "naive_models": 0,
         "sophisticated_models": 1,
-        "special": {"format": False, "list": True, "no_projection": False},
+        "special": {"no_projection": True},
     },
     {
         "name": "Compare two sophisticated population models",
         "output": "population",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "special": {"format": False, "list": False, "no_projection": False},
+        "special": {"no_projection": False},
     },
     {
         "name": "Generate detailed projections formatted as columns",
-        "output": "population",
+        "output": "columns",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "special": {"format": True, "list": False, "no_projection": False},
+        "special": {"no_projection": False},
     },
     {
         "name": "Model increases in fission-event frequency",
         "output": "population",
         "sophisticated_models": 1,
-        "special": {"format": False, "list": True, "no_projection": False},
+        "special": {"no_projection": False},
     },
 ]
 
@@ -74,7 +74,7 @@ class GetData:
         return projection_time
 
     def target_population():
-        pass
+        return input_number_value("Enter the target population: ")
 
 def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount, variable_to_output = "population"):
     initial_population = float(initial_population)
@@ -89,9 +89,8 @@ def calculate_population_size(initial_population: float, growth_rate: TimeAmount
                 # convert to same unit as projected time
                 fission_frequency.convert(projection_time.get_unit())
             f = fission_frequency.get_quantity()
-            return round(initial_population * ((1 + growth_rate.get_quantity() / f) ** (f * projection_time.get_quantity())), 2)
+            return round(initial_population * ((1 + growth_rate.get_quantity() / f) ** (f * projection_time.get_quantity())), 3)
         
-
 def input_time_amount(prompt: str, validation_error_message: str = "Invalid. First value must be a number."):
     while True:
         try:
@@ -115,9 +114,9 @@ def input_number_value(prompt: str):
         except:
             print("Invalid. Enter a number.")
 
-def summary(data, settings, projection_time):
+def summary(data, settings, projection_time, target_population):
     # write a summary of what the user inputted
-    print(data)
+    pass
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -140,27 +139,58 @@ def run_module(module_number: int):
     if len(data) > 0 and not settings["special"]["no_projection"]:
         projection_time = GetData.projection_time()
 
-    summary(data, settings, projection_time)
+    # the target population is only used in the second module
+    if settings["output"] == "time":
+        target_population = GetData.target_population()
+        data = [item for item in data for _ in range(1000)]  # change this so that it doesnt need to be so long
+    else: 
+        target_population = None
+    projection_time = None if target_population else GetData.projection_time()
 
+    summary(data, settings, projection_time, target_population)
+
+    increase_projection = bool(target_population)
+    projection_time = TimeAmount(0, data[0][3].get_unit()) if increase_projection else None
+
+    results = {}
+    sophisticated_model_count = 1
+    naive_model_count = 1
+    for model in data:
+        model_type, initial_population, growth_rate = model[:3]
+        fission_frequency = model[3] if len(model) > 3 else None
+        
+        if increase_projection:
+            projection_time.quantity += 1
+
+        if model_type == "naive":
+            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
+            results[f"Naive Model {naive_model_count}"] = result
+            naive_model_count += 1
+        elif model_type == "sophisticated":
+            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
+            results[f"Sophisticated Model {sophisticated_model_count}"] = result
+            sophisticated_model_count += 1
+
+        if result >= target_population and increase_projection:
+            # if the result is greater than the target population, break the loop
+            break
+    
     # Results
-    if settings["special"]["format"]:
+    print("\nResults")
+    if settings["output"] == "columns":
         # format the output as columns
         pass
-    elif settings["special"]["list"]:
-        # list the output
-        pass
+    elif settings["output"] == "time":
+        print_list = []
+        for model, result in results.items(): 
+            print_list.append(result)
+        print(f"Forward Projection: {print_list}")
+        print(f"\nTime Taken: {projection_time.get_quantity()} {projection_time.get_unit()}")
     else:
         # print the results based on the output type
-        for model in data:
-            model_type, initial_population, growth_rate = model[:3]
-            fission_frequency = model[3] if len(model) > 3 else None
-            
-            if model_type == "naive":
-                result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
-                print(f"Naive Model: {result}")
-            elif model_type == "sophisticated":
-                result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
-                print(f"Sophisticated Model: {result}")
+        for model, result in results.items():
+            print(f"{model}: {result}")
+
 
 if __name__ == "__main__":
-    run_module(1)
+    run_module(2)
