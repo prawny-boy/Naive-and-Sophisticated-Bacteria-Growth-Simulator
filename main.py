@@ -6,6 +6,42 @@
 (5) Model increases in fission-event frequency
 """
 seconds_in_unit = {"d": 86400, "hd": 86400 / 2, "qd": 86400 / 4, "h": 3600, "m": 60, "s": 1,}
+modules_settings = [
+    {
+        "name": "Compare a naive and sophisticated model",
+        "output": "population",
+        "naive_models": 1,
+        "sophisticated_models": 1,
+        "special": {"format": False, "list": False},
+    },
+    {
+        "name": "Time for a sophisticated model to reach the target population",
+        "output": "time",
+        "naive_models": 0,
+        "sophisticated_models": 1,
+        "special": {"format": False, "list": True},
+    },
+    {
+        "name": "Compare two sophisticated population models",
+        "output": "population",
+        "naive_models": 0,
+        "sophisticated_models": 2,
+        "special": {"format": False, "list": False},
+    },
+    {
+        "name": "Generate detailed projections formatted as columns",
+        "output": "population",
+        "naive_models": 0,
+        "sophisticated_models": 2,
+        "special": {"format": True, "list": False},
+    },
+    {
+        "name": "Model increases in fission-event frequency",
+        "output": "population",
+        "sophisticated_models": 1,
+        "special": {"format": False, "list": True},
+    },
+]
 
 class TimeAmount:
     def __init__(self, quantity:float, unit:str):
