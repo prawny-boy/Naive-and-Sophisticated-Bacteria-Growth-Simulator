@@ -116,7 +116,30 @@ def input_number_value(prompt: str):
             print("Invalid. Enter a number.")
 
 def summary(data:list[tuple[str, int, TimeAmount, TimeAmount]], settings, projection_time, target_population):
-    pass
+    # write a summary of what the user inputted
+    naive_model_count = 0
+    sophisticated_model_count = 0
+    for model in data:
+        model_type = model[0]
+        if model_type == "naive":
+            model_number = naive_model_count
+            naive_model_count += 1
+        else:
+            model_number = sophisticated_model_count
+            sophisticated_model_count += 1
+        model_population = model[1]
+        model_growth_rate = model[2].get_quantity()
+        model_growth_unit = model[2].get_unit()
+        fission_frequency = model[3] if len(model) > 3 else None
+
+        print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end=", ")
+
+        print(f"Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
+
+        if projection_time != None:
+            print(f"Projected Timeframe: {projection_time}")
+        if target_population != None:
+            print(f"Target Population: {target_population}")
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
