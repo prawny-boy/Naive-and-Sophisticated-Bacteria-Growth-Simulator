@@ -5,34 +5,30 @@ MODULE_SETTINGS = [
         "output": "population",
         "naive_models": 1,
         "sophisticated_models": 1,
-        "special": {"no_projection": False},
     },
     {
         "name": "Time for a sophisticated model to reach the target population",
         "output": "time",
         "naive_models": 0,
         "sophisticated_models": 1,
-        "special": {"no_projection": True},
     },
     {
-        "name": "Compare two sophisticated population models",
+        "name": "Compare population models",
         "output": "population",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "special": {"no_projection": False},
     },
     {
         "name": "Generate detailed projections formatted as columns",
         "output": "columns",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "special": {"no_projection": False},
     },
     {
         "name": "Model increases in fission-event frequency",
         "output": "population",
+        "naive_models": 0,
         "sophisticated_models": 1,
-        "special": {"no_projection": False},
     },
 ]
 
@@ -130,27 +126,29 @@ def run_module(module_number: int):
     settings = MODULE_SETTINGS[module_number - 1]
     print(f"\nModule {module_number}: {settings['name']}")
 
+    # Get data for models
     data = []
     for i in range(settings["naive_models"]):
         data.append(tuple(["naive"]) + GetData.naive_model(i + 1))
     for i in range(settings["sophisticated_models"]):
         data.append(tuple(["sophisticated"]) + GetData.sophisticated_model(i + 1))
 
-    if len(data) > 0 and not settings["special"]["no_projection"]:
+    # Get projection time or target population
+    if not settings["output"] == "time":
         projection_time = GetData.projection_time()
-
-    # the target population is only used in the second module
-    if settings["output"] == "time":
+        target_population = None
+    else:
+        # the target population is only used in the second module
         target_population = GetData.target_population()
         data = [item for item in data for _ in range(1000)]  # change this so that it doesnt need to be so long
-    else: 
-        target_population = None
-    projection_time = None if target_population else GetData.projection_time()
+        projection_time = None
 
+    # summarise data inputted
     summary(data, settings, projection_time, target_population)
 
-    increase_projection = bool(target_population)
-    projection_time = TimeAmount(0, data[0][3].get_unit()) if increase_projection else None
+    if settings["output"] == "time":
+        increase_projection = True
+        projection_time = TimeAmount(0, data[0][3].get_unit())
 
     results = {}
     sophisticated_model_count = 1
