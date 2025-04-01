@@ -3,7 +3,7 @@ MODULE_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
         "output": "population",
-        "condition": "none",
+        "condition": "projected",
         "naive_models": 1,
         "sophisticated_models": 1,
     },
@@ -17,7 +17,7 @@ MODULE_SETTINGS = [
     {
         "name": "Compare population models",
         "output": "population",
-        "condition": "none",
+        "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 2,
     },
@@ -70,11 +70,10 @@ def sophisticated_model_input(number = ""):
 
 def projection_time_input():
     print("\nProjection Timeframe")
-    projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
-    return projection_time
+    return input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
 
-def target_population_input(extra = ""):
-    return input_number_value(f"Enter the target population {extra}: ")
+def target_population_input(extra_text = ""):
+    return input_number_value(f"Enter the target population {extra_text}: ")
 
 def calculate_population_size(model_type:str, initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount) -> float:
     initial_population = float(initial_population)
@@ -111,11 +110,11 @@ def input_number_value(prompt: str):
         except:
             print("Invalid. Enter a number.")
 
-def summary(data:list[tuple[str, int, TimeAmount, TimeAmount]], settings, projection_time, target_population):
+def summary(models_data:list[tuple[str, int, TimeAmount, TimeAmount]], settings, projection_time, target_population):
     # write a summary of what the user inputted
     naive_model_count = 0
     sophisticated_model_count = 0
-    for model in data:
+    for model in models_data:
         model_type = model[0]
         if model_type == "naive":
             model_number = naive_model_count
@@ -159,9 +158,11 @@ def calculate_models(list_of_models:list[tuple[str, int, TimeAmount, TimeAmount,
         opening_population.append(initial_population)
         added_population.append(result - initial_population)
         final_population.append(result)
+    
+    return results, opening_population, added_population, final_population
 
-def compile_data(list_of_models):
-    pass
+def compile_data(models_data):
+    projection_time = TimeAmount(0, models_data[0][3].get_unit())
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -175,48 +176,34 @@ def run_module(module_number: int):
     settings = MODULE_SETTINGS[module_number - 1]
     print(f"\nModule {module_number}: {settings['name']}")
 
-    # Get data for models
-    data = []
+    # GET USER INPUT
+    models_data = []
     for i in range(settings["naive_models"]):
-        data.append(tuple(["naive"]) + naive_model_input(i + 1) + tuple([None]))
+        models_data.append(tuple(["naive"]) + naive_model_input(i + 1) + tuple([None]))
     for i in range(settings["sophisticated_models"]):
-        data.append(tuple(["sophisticated"]) + sophisticated_model_input(i + 1))
+        models_data.append(tuple(["sophisticated"]) + sophisticated_model_input(i + 1))
 
     # Get projection time or target population
-    # set these variables to begin calculation
     target_population = None
     projection_time = None
-    stop_by_population = False
-    split_projection_time = False
 
     if settings["condition"] == "population":
         target_population = target_population_input()
-        stop_by_population = split_projection_time = True
     elif settings["condition"] == "varied":
         target_population = target_population_input("(Enter 0 for stopping after a projected time)")
         if target_population == 0:
             projection_time = projection_time_input()
-            split_projection_time = True
-        else:
-            stop_by_population = split_projection_time = True
     else:
         projection_time = projection_time_input()
 
     # summarise data inputted
-    summary(data, settings, projection_time, target_population)
-
-    stop_by_projection_time = False
-    if split_projection_time:
-        if not stop_by_population:
-            target_projection_time = projection_time
-            stop_by_projection_time = True
-        projection_time = TimeAmount(0, data[0][3].get_unit())
-
-    data = compile_data(data)
+    summary(models_data, settings, projection_time, target_population)
     
-    results, opening_population, added_population, final_population = calculate_models(data)
+    # CALCULATIONS
+    models_data = compile_data(models_data, projection_time, target_population)
+    results, opening_population, added_population, final_population = calculate_models(models_data)
 
-    # Results
+    # PRINT RESULTS}
     print("\nResults")
     if settings["output"] == "columns":
         # format the output as columns
@@ -227,9 +214,9 @@ def run_module(module_number: int):
         print_list = []
         for model, result in results.items(): 
             print_list.append(result)
-        if stop_by_population:
+        if settings["condition"] == "population":
             print(f"Forward Projection: {print_list}")
-            print(f"\nTime Taken: {projection_time.get_quantity()} {projection_time.get_unit()}")
+            print(f"\nTime taken to reach population: {projection_time.get_quantity()} {projection_time.get_unit()}")
         else:
             print(f"Models (In order of input): {print_list}")
     else:
