@@ -54,28 +54,27 @@ class TimeAmount:
     def get_unit(self):
         return self.unit
 
-class Input:
-    # to store all the inputting functions into a class for easier sorting and calling
-    def naive_model(number = ""):
-        print(f"\nNaive Model {number}")
-        initial_population = input_number_value("Enter the initial population: ")
-        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-        return (initial_population, growth_rate)
+# Functions
+def naive_model_input(number = ""):
+    print(f"\nNaive Model {number}")
+    initial_population = input_number_value("Enter the initial population: ")
+    growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+    return (initial_population, growth_rate)
 
-    def sophisticated_model(number = ""):
-        print(f"\nSophisticated Model {number}")
-        initial_population = input_number_value("Enter the initial population: ")
-        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-        fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
-        return (initial_population, growth_rate, fission_frequency)
+def sophisticated_model_input(number = ""):
+    print(f"\nSophisticated Model {number}")
+    initial_population = input_number_value("Enter the initial population: ")
+    growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+    fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
+    return (initial_population, growth_rate, fission_frequency)
 
-    def projection_time():
-        print("\nProjection Timeframe")
-        projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
-        return projection_time
+def projection_time_input():
+    print("\nProjection Timeframe")
+    projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
+    return projection_time
 
-    def target_population(extra = ""):
-        return input_number_value(f"Enter the target population {extra}: ")
+def target_population_input(extra = ""):
+    return input_number_value(f"Enter the target population {extra}: ")
 
 def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount, variable_to_output = "population") -> float:
     initial_population = float(initial_population)
@@ -156,42 +155,35 @@ def run_module(module_number: int):
     # Get data for models
     data = []
     for i in range(settings["naive_models"]):
-        data.append(tuple(["naive"]) + Input.naive_model(i + 1))
+        data.append(tuple(["naive"]) + naive_model_input(i + 1))
     for i in range(settings["sophisticated_models"]):
-        data.append(tuple(["sophisticated"]) + Input.sophisticated_model(i + 1))
+        data.append(tuple(["sophisticated"]) + sophisticated_model_input(i + 1))
 
     # Get projection time or target population
+    # set these variables to begin calculation
+    target_population = None
+    projection_time = None
+    stop_by_population = False
+    split_projection_time = False
+
     if settings["condition"] == "population":
-        # the target population is only used in the second module
-        target_population = Input.target_population()
-        data = [item for item in data for _ in range(1000)]  # change this so that it doesnt need to be so long
-        projection_time = None
-        stop_by_population = True
-        split_projection_time = True
+        target_population = target_population_input()
+        stop_by_population = split_projection_time = True
     elif settings["condition"] == "varied":
-        target_population = Input.target_population("(Enter 0 for stopping after a projected time)")
+        target_population = target_population_input("(Enter 0 for stopping after a projected time)")
         if target_population == 0:
-            projection_time = Input.projection_time()
-            target_population = None
-            stop_by_population = False
+            projection_time = projection_time_input()
             split_projection_time = True
         else:
-            data = [item for item in data for _ in range(1000)]  # change this so that it doesnt need to be so long
-            projection_time = None
-            stop_by_population = True
-            split_projection_time = True
+            stop_by_population = split_projection_time = True
     else:
-        projection_time = Input.projection_time()
-        target_population = None
-        stop_by_population = False
-        split_projection_time = False
+        projection_time = projection_time_input()
 
     # summarise data inputted
     summary(data, settings, projection_time, target_population)
 
     stop_by_projection_time = False
     if split_projection_time:
-        
         if not stop_by_population:
             target_projection_time = projection_time
             stop_by_projection_time = True
