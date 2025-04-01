@@ -28,3 +28,13 @@ print(growth_rate.get_quantity)
 q = 100
 q /= 100
 print(q)
+
+def return_list():
+    return [1, 2, 3]
+
+a = return_list()
+print(type(a))
+
+projection_time = None
+if projection_time:
+    print("o")

@@ -2,7 +2,7 @@ SECONDS_IN_UNIT = {"d": 86400, "hd": 86400 / 2, "qd": 86400 / 4, "h": 3600, "m":
 MODULE_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
-        "output": "population",
+        "output": "final",
         "condition": "projected",
         "naive_models": 1,
         "sophisticated_models": 1,
@@ -16,7 +16,7 @@ MODULE_SETTINGS = [
     },
     {
         "name": "Compare population models",
-        "output": "population",
+        "output": "final",
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 2,
@@ -30,7 +30,7 @@ MODULE_SETTINGS = [
     },
     {
         "name": "Model increases in fission-event frequency",
-        "output": "population",
+        "output": "final",
         "condition": "fission",
         "naive_models": 0,
         "sophisticated_models": 1,
@@ -59,14 +59,14 @@ def naive_model_input(number = ""):
     print(f"\nNaive Model {number}")
     initial_population = input_number_value("Enter the initial population: ")
     growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-    return (initial_population, growth_rate)
+    return [initial_population, growth_rate]
 
 def sophisticated_model_input(number = ""):
     print(f"\nSophisticated Model {number}")
     initial_population = input_number_value("Enter the initial population: ")
     growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
     fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
-    return (initial_population, growth_rate, fission_frequency)
+    return [initial_population, growth_rate, fission_frequency]
 
 def projection_time_input():
     print("\nProjection Timeframe")
@@ -110,7 +110,7 @@ def input_number_value(prompt: str):
         except:
             print("Invalid. Enter a number.")
 
-def summary(models_data:list[tuple[str, int, TimeAmount, TimeAmount]], settings, projection_time, target_population):
+def summary(models_data:list[list[str, int, TimeAmount, TimeAmount]], projection_time, target_population):
     # write a summary of what the user inputted
     naive_model_count = 0
     sophisticated_model_count = 0
@@ -136,7 +136,7 @@ def summary(models_data:list[tuple[str, int, TimeAmount, TimeAmount]], settings,
         if target_population != None:
             print(f"Target Population: {target_population}")
 
-def calculate_models(list_of_models:list[tuple[str, int, TimeAmount, TimeAmount, TimeAmount]]):
+def calculate_models(list_of_models:list[list[str, int, TimeAmount, TimeAmount, TimeAmount]]):
     results = {}
     result = 0
     sophisticated_model_count = 1
@@ -161,8 +161,31 @@ def calculate_models(list_of_models:list[tuple[str, int, TimeAmount, TimeAmount,
     
     return results, opening_population, added_population, final_population
 
-def compile_data(models_data):
-    projection_time = TimeAmount(0, models_data[0][3].get_unit())
+def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], projection_time:TimeAmount|None, target_population:int, output_as:str):
+    # 2 ways, stop after a target population or stop after a projected time
+    # the last way is just to print out the final one
+    # projection_time = TimeAmount(0, models_data[0][3].get_unit())
+    calculate_data = [] # going to be a list[list[list[values of calculations for model]]]
+    # if output_as == "final":
+    #     for i in range(len(models_data)):
+    #         if projection_time: # if not 0 or None
+    #             models_data[i] = models_data[i] + projection_time
+    #         elif target_population:
+    #             models_data[i] = models_data[i] + projection_time # IMPORTANT Calculate the projection time needed to exceed the target population
+    
+    # if output_as == "list" or output_as == "columns":
+    #     projection_time_count = 0
+    #     for i in range(len(models_data)):
+    #         if projection_time:
+    #             for n in range(projection_time.get_quantity()):
+    #                 projection_time_count += 1
+    #                 projection_time.quantity = projection_time_count
+    #                 models_data.
+    #         elif target_population:
+    #             for n in range(projection_time.get_quantity()): # IMPORTANT same as above
+    #                 pass
+    
+    return calculate_data
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -179,9 +202,9 @@ def run_module(module_number: int):
     # GET USER INPUT
     models_data = []
     for i in range(settings["naive_models"]):
-        models_data.append(tuple(["naive"]) + naive_model_input(i + 1) + tuple([None]))
+        models_data.append(["naive"] + naive_model_input(i + 1) + [None])
     for i in range(settings["sophisticated_models"]):
-        models_data.append(tuple(["sophisticated"]) + sophisticated_model_input(i + 1))
+        models_data.append(["sophisticated"] + sophisticated_model_input(i + 1))
 
     # Get projection time or target population
     target_population = None
@@ -193,14 +216,14 @@ def run_module(module_number: int):
         target_population = target_population_input("(Enter 0 for stopping after a projected time)")
         if target_population == 0:
             projection_time = projection_time_input()
-    else:
+    elif settings["condition"] == "projected":
         projection_time = projection_time_input()
 
     # summarise data inputted
-    summary(models_data, settings, projection_time, target_population)
+    summary(models_data, projection_time, target_population)
     
     # CALCULATIONS
-    models_data = compile_data(models_data, projection_time, target_population)
+    models_data = compile_data(models_data, projection_time, target_population, settings["output"])
     results, opening_population, added_population, final_population = calculate_models(models_data)
 
     # PRINT RESULTS}
@@ -219,7 +242,7 @@ def run_module(module_number: int):
             print(f"\nTime taken to reach population: {projection_time.get_quantity()} {projection_time.get_unit()}")
         else:
             print(f"Models (In order of input): {print_list}")
-    else:
+    elif settings["output"] == "final":
         # print the results based on the output type
         for model, result in results.items():
             print(f"{model}: {result}")
