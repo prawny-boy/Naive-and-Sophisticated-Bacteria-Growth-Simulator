@@ -76,16 +76,17 @@ def projection_time_input():
 def target_population_input(extra = ""):
     return input_number_value(f"Enter the target population {extra}: ")
 
-def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount) -> float:
+def calculate_population_size(model_type:str, initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount) -> float:
     initial_population = float(initial_population)
-    growth_rate.convert(projection_time.get_unit())
+    projection_time.convert(growth_rate.get_unit())
+    growth_rate.quantity /= 100
 
-    if fission_frequency == None:
+    if model_type == "naive":
         return round(initial_population * ((1 + growth_rate.get_quantity()) * projection_time.get_quantity()))
-    else:
-        growth_rate.convert(fission_frequency.get_unit())
-        projection_time.convert(fission_frequency.get_unit())
-        return initial_population * ((1 + growth_rate.get_quantity() / growth_rate.get_quantity() / 100) ** (fission_frequency.get_quantity() * projection_time.get_quantity()))
+    if model_type == "sophisticated":
+        fission_frequency.convert(growth_rate.get_unit())
+        rate_over_fission = growth_rate.get_quantity() * fission_frequency.get_quantity()
+        return initial_population * ((1 + rate_over_fission) ** ((growth_rate.get_quantity() / rate_over_fission) * projection_time.get_quantity()))
         
 def input_time_amount(prompt: str, validation_error_message: str = "Invalid. First value must be a number."):
     while True:
@@ -147,12 +148,11 @@ def calculate_models(list_of_models:list[tuple[str, int, TimeAmount, TimeAmount,
     for model in list_of_models:
         model_type, initial_population, growth_rate, fission_frequency, projection_time = model[:5]
 
+        result = calculate_population_size(model_type, initial_population, growth_rate, projection_time, fission_frequency)
         if model_type == "naive":
-            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
             results[f"Naive Model {naive_model_count}"] = result
             naive_model_count += 1
         elif model_type == "sophisticated":
-            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
             results[f"Sophisticated Model {sophisticated_model_count}"] = result
             sophisticated_model_count += 1
 
