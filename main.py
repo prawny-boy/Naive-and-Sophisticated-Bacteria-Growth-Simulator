@@ -31,7 +31,7 @@ MODULE_SETTINGS = [
     {
         "name": "Model increases in fission-event frequency",
         "output": "population",
-        "condition": "none",
+        "condition": "fission",
         "naive_models": 0,
         "sophisticated_models": 1,
     },
@@ -76,20 +76,16 @@ def projection_time_input():
 def target_population_input(extra = ""):
     return input_number_value(f"Enter the target population {extra}: ")
 
-def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount, variable_to_output = "population") -> float:
+def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount) -> float:
     initial_population = float(initial_population)
-    growth_rate.quantity /= 100
     growth_rate.convert(projection_time.get_unit())
 
-    if variable_to_output == "population":
-        if fission_frequency == None:
-            return round(initial_population * ((1 + growth_rate.get_quantity()) * projection_time.get_quantity()))
-        else:
-            if fission_frequency.get_quantity() == 1:
-                # convert to same unit as projected time
-                fission_frequency.convert(projection_time.get_unit())
-            f = fission_frequency.get_quantity()
-            return round(initial_population * ((1 + growth_rate.get_quantity() / f) ** (f * projection_time.get_quantity())), 3)
+    if fission_frequency == None:
+        return round(initial_population * ((1 + growth_rate.get_quantity()) * projection_time.get_quantity()))
+    else:
+        growth_rate.convert(fission_frequency.get_unit())
+        projection_time.convert(fission_frequency.get_unit())
+        return initial_population * ((1 + growth_rate.get_quantity() / growth_rate.get_quantity() / 100) ** (fission_frequency.get_quantity() * projection_time.get_quantity()))
         
 def input_time_amount(prompt: str, validation_error_message: str = "Invalid. First value must be a number."):
     while True:
@@ -140,6 +136,33 @@ def summary(data:list[tuple[str, int, TimeAmount, TimeAmount]], settings, projec
         if target_population != None:
             print(f"Target Population: {target_population}")
 
+def calculate_models(list_of_models:list[tuple[str, int, TimeAmount, TimeAmount, TimeAmount]]):
+    results = {}
+    result = 0
+    sophisticated_model_count = 1
+    naive_model_count = 1
+    opening_population = []
+    added_population = []
+    final_population = []
+    for model in list_of_models:
+        model_type, initial_population, growth_rate, fission_frequency, projection_time = model[:5]
+
+        if model_type == "naive":
+            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
+            results[f"Naive Model {naive_model_count}"] = result
+            naive_model_count += 1
+        elif model_type == "sophisticated":
+            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
+            results[f"Sophisticated Model {sophisticated_model_count}"] = result
+            sophisticated_model_count += 1
+
+        opening_population.append(initial_population)
+        added_population.append(result - initial_population)
+        final_population.append(result)
+
+def compile_data(list_of_models):
+    pass
+
 def run_module(module_number: int):
     # run the module based on the module number and settings
     """
@@ -155,7 +178,7 @@ def run_module(module_number: int):
     # Get data for models
     data = []
     for i in range(settings["naive_models"]):
-        data.append(tuple(["naive"]) + naive_model_input(i + 1))
+        data.append(tuple(["naive"]) + naive_model_input(i + 1) + tuple([None]))
     for i in range(settings["sophisticated_models"]):
         data.append(tuple(["sophisticated"]) + sophisticated_model_input(i + 1))
 
@@ -189,42 +212,10 @@ def run_module(module_number: int):
             stop_by_projection_time = True
         projection_time = TimeAmount(0, data[0][3].get_unit())
 
-    results = {}
-    result = 0
-    sophisticated_model_count = 1
-    naive_model_count = 1
-    opening_population = []
-    added_population = []
-    final_population = []
-    for model in data:
-        model_type, initial_population, growth_rate = model[:3]
-        fission_frequency = model[3] if len(model) > 3 else None
-        
-        if stop_by_population:
-            if result >= target_population:
-                # if the result is greater than the target population, break the loop
-                break
-        
-        if stop_by_projection_time:
-            if projection_time.quantity >= target_projection_time:
-                break
-        
-        if split_projection_time:
-            projection_time.quantity += 1
-
-        if model_type == "naive":
-            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
-            results[f"Naive Model {naive_model_count}"] = result
-            naive_model_count += 1
-        elif model_type == "sophisticated":
-            result = calculate_population_size(initial_population, growth_rate, projection_time, fission_frequency)
-            results[f"Sophisticated Model {sophisticated_model_count}"] = result
-            sophisticated_model_count += 1
-
-        opening_population.append(initial_population)
-        added_population.append(result - initial_population)
-        final_population.append(result)
+    data = compile_data(data)
     
+    results, opening_population, added_population, final_population = calculate_models(data)
+
     # Results
     print("\nResults")
     if settings["output"] == "columns":
