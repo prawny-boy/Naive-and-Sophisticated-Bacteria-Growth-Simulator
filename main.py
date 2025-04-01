@@ -3,30 +3,35 @@ MODULE_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
         "output": "population",
+        "condition": "none",
         "naive_models": 1,
         "sophisticated_models": 1,
     },
     {
         "name": "Time for a sophisticated model to reach the target population",
-        "output": "time",
+        "output": "list",
+        "condition": "population",
         "naive_models": 0,
         "sophisticated_models": 1,
     },
     {
         "name": "Compare population models",
         "output": "population",
+        "condition": "none",
         "naive_models": 0,
         "sophisticated_models": 2,
     },
     {
         "name": "Generate detailed projections formatted as columns",
         "output": "columns",
+        "condition": "varied",
         "naive_models": 0,
-        "sophisticated_models": 2,
+        "sophisticated_models": 1,
     },
     {
         "name": "Model increases in fission-event frequency",
         "output": "population",
+        "condition": "none",
         "naive_models": 0,
         "sophisticated_models": 1,
     },
@@ -49,7 +54,7 @@ class TimeAmount:
     def get_unit(self):
         return self.unit
 
-class GetData:
+class Input:
     # to store all the inputting functions into a class for easier sorting and calling
     def naive_model(number = ""):
         print(f"\nNaive Model {number}")
@@ -69,10 +74,10 @@ class GetData:
         projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
         return projection_time
 
-    def target_population():
-        return input_number_value("Enter the target population: ")
+    def target_population(extra = ""):
+        return input_number_value(f"Enter the target population {extra}: ")
 
-def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount, variable_to_output = "population"):
+def calculate_population_size(initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount, variable_to_output = "population") -> float:
     initial_population = float(initial_population)
     growth_rate.quantity /= 100
     growth_rate.convert(projection_time.get_unit())
@@ -110,8 +115,7 @@ def input_number_value(prompt: str):
         except:
             print("Invalid. Enter a number.")
 
-def summary(data, settings, projection_time, target_population):
-    # write a summary of what the user inputted
+def summary(data:list[tuple[str, int, TimeAmount, TimeAmount]], settings, projection_time, target_population):
     pass
 
 def run_module(module_number: int):
@@ -129,35 +133,68 @@ def run_module(module_number: int):
     # Get data for models
     data = []
     for i in range(settings["naive_models"]):
-        data.append(tuple(["naive"]) + GetData.naive_model(i + 1))
+        data.append(tuple(["naive"]) + Input.naive_model(i + 1))
     for i in range(settings["sophisticated_models"]):
-        data.append(tuple(["sophisticated"]) + GetData.sophisticated_model(i + 1))
+        data.append(tuple(["sophisticated"]) + Input.sophisticated_model(i + 1))
 
     # Get projection time or target population
-    if not settings["output"] == "time":
-        projection_time = GetData.projection_time()
-        target_population = None
-    else:
+    if settings["condition"] == "population":
         # the target population is only used in the second module
-        target_population = GetData.target_population()
+        target_population = Input.target_population()
         data = [item for item in data for _ in range(1000)]  # change this so that it doesnt need to be so long
         projection_time = None
+        stop_by_population = True
+        split_projection_time = True
+    elif settings["condition"] == "varied":
+        target_population = Input.target_population("(Enter 0 for stopping after a projected time)")
+        if target_population == 0:
+            projection_time = Input.projection_time()
+            target_population = None
+            stop_by_population = False
+            split_projection_time = True
+        else:
+            data = [item for item in data for _ in range(1000)]  # change this so that it doesnt need to be so long
+            projection_time = None
+            stop_by_population = True
+            split_projection_time = True
+    else:
+        projection_time = Input.projection_time()
+        target_population = None
+        stop_by_population = False
+        split_projection_time = False
 
     # summarise data inputted
     summary(data, settings, projection_time, target_population)
 
-    if settings["output"] == "time":
-        increase_projection = True
+    stop_by_projection_time = False
+    if split_projection_time:
+        
+        if not stop_by_population:
+            target_projection_time = projection_time
+            stop_by_projection_time = True
         projection_time = TimeAmount(0, data[0][3].get_unit())
 
     results = {}
+    result = 0
     sophisticated_model_count = 1
     naive_model_count = 1
+    opening_population = []
+    added_population = []
+    final_population = []
     for model in data:
         model_type, initial_population, growth_rate = model[:3]
         fission_frequency = model[3] if len(model) > 3 else None
         
-        if increase_projection:
+        if stop_by_population:
+            if result >= target_population:
+                # if the result is greater than the target population, break the loop
+                break
+        
+        if stop_by_projection_time:
+            if projection_time.quantity >= target_projection_time:
+                break
+        
+        if split_projection_time:
             projection_time.quantity += 1
 
         if model_type == "naive":
@@ -169,26 +206,30 @@ def run_module(module_number: int):
             results[f"Sophisticated Model {sophisticated_model_count}"] = result
             sophisticated_model_count += 1
 
-        if result >= target_population and increase_projection:
-            # if the result is greater than the target population, break the loop
-            break
+        opening_population.append(initial_population)
+        added_population.append(result - initial_population)
+        final_population.append(result)
     
     # Results
     print("\nResults")
     if settings["output"] == "columns":
         # format the output as columns
-        pass
-    elif settings["output"] == "time":
+        columns = zip(opening_population, added_population, final_population)
+        for column in columns:
+            print(column)
+    elif settings["output"] == "list":
         print_list = []
         for model, result in results.items(): 
             print_list.append(result)
-        print(f"Forward Projection: {print_list}")
-        print(f"\nTime Taken: {projection_time.get_quantity()} {projection_time.get_unit()}")
+        if stop_by_population:
+            print(f"Forward Projection: {print_list}")
+            print(f"\nTime Taken: {projection_time.get_quantity()} {projection_time.get_unit()}")
+        else:
+            print(f"Models (In order of input): {print_list}")
     else:
         # print the results based on the output type
         for model, result in results.items():
             print(f"{model}: {result}")
 
-
 if __name__ == "__main__":
-    run_module(2)
+    run_module(4)
