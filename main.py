@@ -203,7 +203,7 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
             projection_time_count = 0
             calculation_data.append([]) # add a new model to the list
             if projection_time:
-                for _ in range(projection_time.get_quantity()):
+                for _ in range(int(projection_time.get_quantity())):
                     projection_time_count += 1
                     calculation_data[i].append(models_data[i] + [projection_time_count]) # add a calculation to the new model
             elif target_population:
