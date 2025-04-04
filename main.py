@@ -161,29 +161,30 @@ def calculate_models(list_of_models:list[list[str, int, TimeAmount, TimeAmount, 
     
     return results, opening_population, added_population, final_population
 
-def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], projection_time:TimeAmount|None, target_population:int, output_as:str):
+def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], projection_time:TimeAmount|None, target_population:int|None, output_as:str):
     # 2 ways, stop after a target population or stop after a projected time
     # the last way is just to print out the final one
-    # projection_time = TimeAmount(0, models_data[0][3].get_unit())
-    calculation_data = [] # going to be a list[list[list[values of calculations for model]]]
-    # if output_as == "final":
-    #     for i in range(len(models_data)):
-    #         if projection_time: # if not 0 or None
-    #             models_data[i] = models_data[i] + projection_time
-    #         elif target_population:
-    #             models_data[i] = models_data[i] + projection_time # IMPORTANT Calculate the projection time needed to exceed the target population
+    calculation_data:list[list[list[str, int, TimeAmount, TimeAmount]]] = []
+    if output_as == "final":
+        for i in range(len(models_data)):
+            calculation_data.append([]) # add a new model to the list
+            if projection_time: # if not 0 or None
+                calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
+            elif target_population:
+                calculation_data[i].append(models_data[i] + [projection_time]) # IMPORTANT Calculate the projection time needed to exceed the target population
     
-    # if output_as == "list" or output_as == "columns":
-    #     projection_time_count = 0
-    #     for i in range(len(models_data)):
-    #         if projection_time:
-    #             for n in range(projection_time.get_quantity()):
-    #                 projection_time_count += 1
-    #                 projection_time.quantity = projection_time_count
-    #                 models_data.
-    #         elif target_population:
-    #             for n in range(projection_time.get_quantity()): # IMPORTANT same as above
-    #                 pass
+    if output_as == "list" or output_as == "columns":
+        for i in range(len(models_data)):
+            projection_time_count = 0
+            calculation_data.append([]) # add a new model to the list
+            if projection_time:
+                for _ in range(projection_time.get_quantity()):
+                    projection_time_count += 1
+                    calculation_data[i].append(models_data[i] + [projection_time_count]) # add a calculation to the new model
+            elif target_population:
+                for _ in range(projection_time.get_quantity()): # IMPORTANT Calculate the projection time needed to exceed the target population
+                    projection_time_count += 1
+                    calculation_data[i].append(models_data[i] + [projection_time_count])
     
     return calculation_data
 
