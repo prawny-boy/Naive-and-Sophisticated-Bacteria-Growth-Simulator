@@ -38,3 +38,9 @@ print(type(a))
 projection_time = None
 if projection_time:
     print("o")
+
+def test (a, b, c):
+    print(a, b, c)
+
+l = [12, 12, 14]
+test(*l)

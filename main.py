@@ -136,28 +136,35 @@ def summary(models_data:list[list[str, int, TimeAmount, TimeAmount]], projection
         if target_population != None:
             print(f"Target Population: {target_population}")
 
-def calculate_models(list_of_models:list[list[str, int, TimeAmount, TimeAmount, TimeAmount]]):
-    results = {}
-    result = 0
+def calculate_models(calculate_data:list[list[list]]):
+    results:dict[str, list] = {}
+    model_result = 0
     sophisticated_model_count = 1
     naive_model_count = 1
-    opening_population = []
-    added_population = []
-    final_population = []
-    for model in list_of_models:
-        model_type, initial_population, growth_rate, fission_frequency, projection_time = model[:5]
-
-        result = calculate_population_size(model_type, initial_population, growth_rate, projection_time, fission_frequency)
-        if model_type == "naive":
-            results[f"Naive Model {naive_model_count}"] = result
+    opening_population:list[list] = []
+    added_population:list[list] = []
+    final_population:list[list] = []
+    for i in range(len(calculate_data)):
+        if calculate_data[i][0][0] == "naive": # getting first model type
+            model_name = f"Naive Model {naive_model_count}"
             naive_model_count += 1
-        elif model_type == "sophisticated":
-            results[f"Sophisticated Model {sophisticated_model_count}"] = result
+        elif calculate_data[i][0][0] == "sophisticated":
+            model_name = f"Sophisticated Model {sophisticated_model_count}"
             sophisticated_model_count += 1
+        results[model_name] = [] # add a new model to the dictionary of results
+        
+        opening_population.append([])
+        added_population.append([])
+        final_population.append([])
 
-        opening_population.append(initial_population)
-        added_population.append(result - initial_population)
-        final_population.append(result)
+        for caclulation in calculate_data[i]:
+            initial_population = caclulation[1]
+            model_result = calculate_population_size(*caclulation[:5])
+            results[model_name].append(model_result) # add the result to the dictionary of results
+
+            opening_population[i].append(initial_population)
+            added_population[i].append(model_result - initial_population)
+            final_population[i].append(model_result)
     
     return results, opening_population, added_population, final_population
 
