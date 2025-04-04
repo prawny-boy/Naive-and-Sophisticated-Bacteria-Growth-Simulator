@@ -75,7 +75,7 @@ def projection_time_input():
 def target_population_input(extra_text = ""):
     return input_number_value(f"Enter the target population {extra_text}: ")
 
-def calculate_population_size(model_type:str, initial_population: float, growth_rate: TimeAmount, projection_time: TimeAmount, fission_frequency: TimeAmount) -> float:
+def calculate_population_size(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
     projection_time.convert(growth_rate.get_unit())
     growth_rate.quantity /= 100
@@ -146,7 +146,7 @@ def summary(models_data:list[list[str, int, TimeAmount, TimeAmount]], projection
         print(f"Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
 
         if projection_time != None:
-            print(f"Projected Timeframe: {projection_time}")
+            print(f"Projected Timeframe: {projection_time.get_quantity()} {projection_time.get_unit()}")
         if target_population != None:
             print(f"Target Population: {target_population}")
 
@@ -171,9 +171,9 @@ def calculate_models(calculate_data:list[list[list]]):
         added_population.append([])
         final_population.append([])
 
-        for caclulation in calculate_data[i]:
-            initial_population = caclulation[1]
-            model_result = calculate_population_size(*caclulation[:5])
+        for calculation in calculate_data[i]:
+            initial_population = calculation[1]
+            model_result = calculate_population_size(*calculation[:5])
             results[model_name].append(model_result) # add the result to the dictionary of results
 
             opening_population[i].append(initial_population)
@@ -281,4 +281,4 @@ def run_module(module_number: int):
     print_results(results, opening_population, added_population, final_population, time_needed, settings["output"], settings["condition"])
 
 if __name__ == "__main__":
-    run_module(4)
+    run_module(0)
