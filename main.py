@@ -165,7 +165,7 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
     # 2 ways, stop after a target population or stop after a projected time
     # the last way is just to print out the final one
     # projection_time = TimeAmount(0, models_data[0][3].get_unit())
-    calculate_data = [] # going to be a list[list[list[values of calculations for model]]]
+    calculation_data = [] # going to be a list[list[list[values of calculations for model]]]
     # if output_as == "final":
     #     for i in range(len(models_data)):
     #         if projection_time: # if not 0 or None
@@ -185,7 +185,7 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
     #             for n in range(projection_time.get_quantity()): # IMPORTANT same as above
     #                 pass
     
-    return calculate_data
+    return calculation_data
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -223,8 +223,8 @@ def run_module(module_number: int):
     summary(models_data, projection_time, target_population)
     
     # CALCULATIONS
-    models_data = compile_data(models_data, projection_time, target_population, settings["output"])
-    results, opening_population, added_population, final_population = calculate_models(models_data)
+    calculation_data = compile_data(models_data, projection_time, target_population, settings["output"])
+    results, opening_population, added_population, final_population = calculate_models(calculation_data)
 
     # PRINT RESULTS}
     print("\nResults")
