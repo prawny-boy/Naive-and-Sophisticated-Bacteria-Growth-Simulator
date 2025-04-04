@@ -75,17 +75,19 @@ def projection_time_input():
 def target_population_input(extra_text = ""):
     return input_number_value(f"Enter the target population {extra_text}: ")
 
-def calculate_population_size(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
+def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
     projection_time.convert(growth_rate.get_unit())
     growth_rate.quantity /= 100
 
     if model_type == "naive":
-        return initial_population * ((1 + growth_rate.get_quantity()) * projection_time.get_quantity())
+        return initial_population + (growth_rate.get_quantity() * initial_population * projection_time.get_quantity())
+
     if model_type == "sophisticated":
         fission_frequency.convert(growth_rate.get_unit())
         rate_over_fission = growth_rate.get_quantity() * fission_frequency.get_quantity()
-        return initial_population * ((1 + rate_over_fission) ** ((growth_rate.get_quantity() / rate_over_fission) * projection_time.get_quantity()))
+        total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
+        return initial_population * ((1 + rate_over_fission) ** total_fission_events)
         
 def input_time_amount(prompt: str, validation_error_message: str = "Invalid. First value must be a number."):
     while True:
