@@ -110,6 +110,20 @@ def input_number_value(prompt: str):
         except:
             print("Invalid. Enter a number.")
 
+def input_custom_settings():
+    print("\nInput Custom Settings")
+    naive_models = input_number_value("Enter the number of naive models: ")
+    sophisticated_models = input_number_value("Enter the number of sophisticated models: ")
+    output = input("Enter the output type (final, list, columns): ")
+    condition = input("Enter the condition (population, varied, projected): ")
+    return {
+        "name": "Custom Settings",
+        "output": output,
+        "condition": condition,
+        "naive_models": naive_models,
+        "sophisticated_models": sophisticated_models,
+    }
+
 def summary(models_data:list[list[str, int, TimeAmount, TimeAmount]], projection_time, target_population):
     # write a summary of what the user inputted
     naive_model_count = 0
@@ -229,7 +243,11 @@ def run_module(module_number: int):
     (4) Generate detailed projections formatted as columns
     (5) Model increases in fission-event frequency
     """
-    settings = MODULE_SETTINGS[module_number - 1]
+    if module_number == 0:
+        settings = input_custom_settings()
+        print(f"Settings selected: {settings}")
+    else:
+        settings = MODULE_SETTINGS[module_number - 1]
     print(f"\nModule {module_number}: {settings['name']}")
 
     # GET USER INPUT
