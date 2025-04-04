@@ -1,3 +1,5 @@
+from print_functions import *
+
 SECONDS_IN_UNIT = {"d": 86400, "hd": 86400 / 2, "qd": 86400 / 4, "h": 3600, "m": 60, "s": 1,}
 MODULE_SETTINGS = [
     {
