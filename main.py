@@ -172,13 +172,17 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
     # 2 ways, stop after a target population or stop after a projected time
     # the last way is just to print out the final one
     calculation_data:list[list[list[str, int, TimeAmount, TimeAmount]]] = []
+    time_needed = None
+    if target_population:
+        time_needed = 1 # IMPORTANT Calculate the projection time needed to exceed the target population
+
     if output_as == "final":
         for i in range(len(models_data)):
             calculation_data.append([]) # add a new model to the list
             if projection_time: # if not 0 or None
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
             elif target_population:
-                calculation_data[i].append(models_data[i] + [projection_time]) # IMPORTANT Calculate the projection time needed to exceed the target population
+                calculation_data[i].append(models_data[i] + [time_needed]) 
     
     if output_as == "list" or output_as == "columns":
         for i in range(len(models_data)):
@@ -189,11 +193,32 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
                     projection_time_count += 1
                     calculation_data[i].append(models_data[i] + [projection_time_count]) # add a calculation to the new model
             elif target_population:
-                for _ in range(projection_time.get_quantity()): # IMPORTANT Calculate the projection time needed to exceed the target population
+                for _ in range(time_needed):
                     projection_time_count += 1
                     calculation_data[i].append(models_data[i] + [projection_time_count])
     
-    return calculation_data
+    return calculation_data, time_needed
+
+def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], time_needed:TimeAmount, output_as:str, condition:str):
+    print("\nResults")
+    if output_as == "columns":
+        # format the output as columns
+        columns = zip(opening_population, added_population, final_population)
+        for column in columns:
+            print(column)
+    elif output_as == "list":
+        print_list = []
+        for model, result in results.items(): 
+            print_list.append(result)
+        if condition == "population":
+            print(f"Forward Projection: {print_list}")
+            print(f"\nTime taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}")
+        else:
+            print(f"Models (In order of input): {print_list}")
+    elif output_as == "final":
+        # print the results based on the output type
+        for model, result in results.items():
+            print(f"{model}: {result}")
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -231,29 +256,11 @@ def run_module(module_number: int):
     summary(models_data, projection_time, target_population)
     
     # CALCULATIONS
-    calculation_data = compile_data(models_data, projection_time, target_population, settings["output"])
+    calculation_data, time_needed = compile_data(models_data, projection_time, target_population, settings["output"])
     results, opening_population, added_population, final_population = calculate_models(calculation_data)
 
-    # PRINT RESULTS}
-    print("\nResults")
-    if settings["output"] == "columns":
-        # format the output as columns
-        columns = zip(opening_population, added_population, final_population)
-        for column in columns:
-            print(column)
-    elif settings["output"] == "list":
-        print_list = []
-        for model, result in results.items(): 
-            print_list.append(result)
-        if settings["condition"] == "population":
-            print(f"Forward Projection: {print_list}")
-            print(f"\nTime taken to reach population: {projection_time.get_quantity()} {projection_time.get_unit()}")
-        else:
-            print(f"Models (In order of input): {print_list}")
-    elif settings["output"] == "final":
-        # print the results based on the output type
-        for model, result in results.items():
-            print(f"{model}: {result}")
+    # PRINT RESULTS
+    print_results(results, opening_population, added_population, final_population, time_needed, settings["output"], settings["condition"])
 
 if __name__ == "__main__":
     run_module(4)
