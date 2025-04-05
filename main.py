@@ -1,6 +1,6 @@
 from print_functions import *
 
-SECONDS_IN_UNIT = {"d": 86400, "hd": 86400 / 2, "qd": 86400 / 4, "h": 3600, "m": 60, "s": 1,}
+SECONDS_IN_UNIT = {"day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "seconds": 1}
 MODULE_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
@@ -70,22 +70,6 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         rate_over_fission = growth_rate.get_quantity() * fission_frequency.get_quantity()
         total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
-        
-def input_time_amount(prompt: str, validation_error_message: str = "Invalid. First value must be a number."):
-    while True:
-        try:
-            user_input = input(prompt).split()
-            amount = user_input[0]
-            unit = user_input[1]
-            if unit not in list(SECONDS_IN_UNIT.keys()):
-                print(f"Invalid. Incorrect unit. {list(SECONDS_IN_UNIT.keys())}")
-                continue
-            amount = float(amount)
-            return TimeAmount(amount, unit)
-        except IndexError:
-            print("Invalid. Enter in format 'number<space>unit'.")
-        except ValueError:
-            print(validation_error_message)
 
 def input_custom_settings():
     print("\nInput Custom Settings")
@@ -243,13 +227,27 @@ def run_module(module_number: int):
     for i in range(settings["naive_models"]):
         print(f"\nNaive Model {i + 1}")
         initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+        growth_rate = TimeAmount(growth_rate = time_amount_input(
+            min = 1,
+            max = 100,
+            prompt = "Enter the growth rate % (7% = 7): ",
+        ))
+        growth_rate = time_amount_input(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
         models_data.append(["naive"] + [initial_population, growth_rate] + [None])
     for i in range(settings["sophisticated_models"]):
         print(f"\nSophisticated Model {i + 1}")
         initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-        fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
+        growth_rate = TimeAmount(growth_rate = time_amount_input(
+            min = 1,
+            max = 100,
+            prompt = "Enter the growth rate % (7% = 7): ",
+        ))
+        fission_frequency = TimeAmount(time_amount_input(
+            min = 1,
+            max = None,
+            prompt = "Enter the fission frequency: ",
+            infinite_end=True,
+        ))
         models_data.append(["sophisticated"] + [initial_population, growth_rate, fission_frequency])
 
     # Get projection time or target population
@@ -264,10 +262,20 @@ def run_module(module_number: int):
         target_population = ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
         if target_population == 0:
             print("\nProjection Timeframe")
-            projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
+            projection_time = TimeAmount(time_amount_input(
+                min = 1,
+                max = None,
+                prompt = "Enter the projection time: ",
+                infinite_end=True,
+            ))
     elif settings["condition"] == "projected":
         print("\nProjection Timeframe")
-        projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
+        projection_time = TimeAmount(time_amount_input(
+            min = 1,
+            max = None,
+            prompt = "Enter the projection time: ",
+            infinite_end=True,
+        ))
 
     # summarise data inputted
     summary(models_data, projection_time, target_population)
