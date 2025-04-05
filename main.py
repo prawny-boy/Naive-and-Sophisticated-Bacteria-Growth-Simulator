@@ -304,18 +304,24 @@ if __name__ == "__main__":
                 "3": "Compare two sophisticated population models", 
                 "4": "Generate detailed projections formatted as columns", 
                 "5": "Model increases in fission-event frequency (Unfinished)",
-                "0": "Custom Settings (Sandbox)",
-                "h": "Help",
-                "q": "Quit"
+                "0": "Custom Simulation Settings (Sandbox)",
+                "h": "Help"
             },
-            prompt = "Select a simulation to run:",
+            prompt = "Main Menu",
             return_key=True,
         )
         if command.isnumeric():
             run_module(int(command))
         elif command == "h":
             print_title("Help")
-            print("This is a population modelling simulator for bacteria.")
-            print("You can select different models and conditions to simulate the growth of bacteria.")
-            print("You can also input custom settings to run your own simulations.")
-            print("Select a simulation to run by entering the number corresponding to the simulation.")
+            print("""This is a population modelling simulator for bacteria. \nIt simulates the growth of bacteria using naive (linear) and sophisticated (exponential) models.
+The naive model is a linear model that calculates the population size based on the growth rate and the projection time.
+The sophisticated model is an exponential model that calculates the population size based on: 
+        growth rate, fission frequency, and projection time.
+
+This simulator allows you to compare the two models and see how they differ in many ways.
+You can input different values for the initial population, growth rate, fission frequency, and projection time.
+You can also input a target population and see how long it takes for the sophisticated model to reach that population.
+
+This is a school project and should not be taken seriously.
+""")
