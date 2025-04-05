@@ -57,29 +57,6 @@ class TimeAmount:
         return self.unit
 
 # Functions
-def naive_model_input(number = ""):
-    print(f"\nNaive Model {number}")
-    initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-    growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-    return [initial_population, growth_rate]
-
-def sophisticated_model_input(number = ""):
-    print(f"\nSophisticated Model {number}")
-    initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-    growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
-    fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
-    return [initial_population, growth_rate, fission_frequency]
-
-def projection_time_input():
-    print("\nProjection Timeframe")
-    return input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
-
-def target_population_input(projection_time_option=False):
-    if projection_time_option:
-        return ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
-    else:
-        return ranged_input(1, None, "Enter the target population: ", infinite_end=True)
-
 def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
     projection_time.convert(growth_rate.get_unit())
@@ -124,8 +101,9 @@ def input_custom_settings():
         "sophisticated_models": sophisticated_models,
     }
 
-def summary(models_data:list[list[str, int, TimeAmount, TimeAmount]], projection_time, target_population):
+def summary(models_data, projection_time:TimeAmount, target_population:TimeAmount):
     # write a summary of what the user inputted
+    print("\nSummary")
     naive_model_count = 0
     sophisticated_model_count = 0
     for model in models_data:
@@ -136,14 +114,14 @@ def summary(models_data:list[list[str, int, TimeAmount, TimeAmount]], projection
         else:
             model_number = sophisticated_model_count
             sophisticated_model_count += 1
-        model_population = model[1]
-        model_growth_rate = model[2].get_quantity()
-        model_growth_unit = model[2].get_unit()
-        fission_frequency = model[3] if len(model) > 3 else None
+        model_population:int = model[1]
+        model_growth_rate:int = model[2].get_quantity()
+        model_growth_unit:str = model[2].get_unit()
+        fission_frequency:TimeAmount = model[3] if len(model) > 3 else None
 
-        print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end=", ")
+        print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end="")
 
-        print(f"Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
+        print(f", Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
 
         if projection_time != None:
             print(f"Projected Timeframe: {projection_time.get_quantity()} {projection_time.get_unit()}")
@@ -253,22 +231,33 @@ def run_module(module_number: int):
     # GET USER INPUT
     models_data = []
     for i in range(settings["naive_models"]):
-        models_data.append(["naive"] + naive_model_input(i + 1) + [None])
+        print(f"\nNaive Model {i + 1}")
+        initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
+        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+        models_data.append(["naive"] + [initial_population, growth_rate] + [None])
     for i in range(settings["sophisticated_models"]):
-        models_data.append(["sophisticated"] + sophisticated_model_input(i + 1))
+        print(f"\nSophisticated Model {i + 1}")
+        initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
+        growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
+        fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
+        models_data.append(["sophisticated"] + [initial_population, growth_rate, fission_frequency])
 
     # Get projection time or target population
     target_population = None
     projection_time = None
 
     if settings["condition"] == "population":
-        target_population = target_population_input()
+        print("\nTarget Population")
+        target_population = ranged_input(1, None, "Enter the target population: ", infinite_end=True)
     elif settings["condition"] == "varied":
-        target_population = target_population_input("(Enter 0 for stopping after a projected time)")
+        print("\nTarget Population")
+        target_population = ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
         if target_population == 0:
-            projection_time = projection_time_input()
+            print("\nProjection Timeframe")
+            projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
     elif settings["condition"] == "projected":
-        projection_time = projection_time_input()
+        print("\nProjection Timeframe")
+        projection_time = input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
 
     # summarise data inputted
     summary(models_data, projection_time, target_population)
