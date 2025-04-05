@@ -72,6 +72,7 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
 def input_custom_settings():
+    # add showing table
     print_title("Input Custom Settings")
     naive_models = ranged_input(0, 10, "Enter the number of naive models: ")
     sophisticated_models = ranged_input(0, 10, "Enter the number of sophisticated models: ")
@@ -305,7 +306,6 @@ if __name__ == "__main__":
                 "5": "Model increases in fission-event frequency (Unfinished)",
                 "0": "Custom Settings (Sandbox)",
                 "h": "Help",
-                "s": "Settings",
                 "q": "Quit"
             },
             prompt = "Select a simulation to run:",
@@ -319,7 +319,3 @@ if __name__ == "__main__":
             print("You can select different models and conditions to simulate the growth of bacteria.")
             print("You can also input custom settings to run your own simulations.")
             print("Select a simulation to run by entering the number corresponding to the simulation.")
-        elif command == "s":
-            print_title("Settings")
-            # add settings here
-            print("Settings are currently not implemented.")
