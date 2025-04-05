@@ -89,6 +89,9 @@ def input_custom_settings():
         prompt = "Select the condition type:",
         return_key=True,
     )
+    print_title("Selected Settings")
+    print(f"Output: {output.capitalize()}, Condition: {condition.capitalize()}")
+    print(f"Naive Models: {naive_models}, Sophisticated Models: {sophisticated_models}")
     return {
         "name": "Custom Settings",
         "output": output,
@@ -274,12 +277,11 @@ def run_module(module_number: int):
     (4) Generate detailed projections formatted as columns
     (5) Model increases in fission-event frequency
     """
-    print_header(f"Module {module_number}: {settings['name']}")
     if module_number == 0:
         settings = input_custom_settings()
-        print(f"Settings selected: {settings}")
     else:
         settings = MODULE_SETTINGS[module_number - 1]
+    print_header(f"Module {module_number}: {settings['name']}")
     
     models_data, projection_time, target_population = run_inputs(settings)
 

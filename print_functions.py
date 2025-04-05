@@ -37,7 +37,7 @@ def listed_input(choices: dict = {"y": "yes", "n": "no"}, prompt: str = "Pick an
         else:
             cprint(error, "red", attrs=["bold"])
             continue
-        cprint(f"Selected {choices[key_answer]}\n", "green")
+        cprint(f"Selected {choices[key_answer]}", "green")
         return key_answer if return_key else choices[key_answer]
 
 def ranged_input(start: int, end: int, prompt: str = "Choose a number:", error: str = "Invalid. Please try again.", infinite_end: bool = False):
