@@ -79,13 +79,15 @@ def input_custom_settings():
         choices = {"final": "Final Population Size", 
                    "list": "List of Populations over Time", 
                    "columns": "Columns of Populations over Time (start, added, end)"},
-        prompt = "Select the output type:"
+        prompt = "Select the output type:",
+        return_key=True,
     )
     condition = listed_input(
         choices = {"population": "Target Population", 
                    "varied": "Varied Population",   
                    "projected": "Projected Time"},
-        prompt = "Select the condition type:"
+        prompt = "Select the condition type:",
+        return_key=True,
     )
     return {
         "name": "Custom Settings",
@@ -227,22 +229,21 @@ def run_module(module_number: int):
     for i in range(settings["naive_models"]):
         print(f"\nNaive Model {i + 1}")
         initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-        growth_rate = TimeAmount(growth_rate = time_amount_input(
+        growth_rate = TimeAmount(*time_amount_input(
             min = 1,
             max = 100,
             prompt = "Enter the growth rate % (7% = 7): ",
         ))
-        growth_rate = time_amount_input(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
         models_data.append(["naive"] + [initial_population, growth_rate] + [None])
     for i in range(settings["sophisticated_models"]):
         print(f"\nSophisticated Model {i + 1}")
         initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-        growth_rate = TimeAmount(growth_rate = time_amount_input(
+        growth_rate = TimeAmount(*time_amount_input(
             min = 1,
             max = 100,
             prompt = "Enter the growth rate % (7% = 7): ",
         ))
-        fission_frequency = TimeAmount(time_amount_input(
+        fission_frequency = TimeAmount(*time_amount_input(
             min = 1,
             max = None,
             prompt = "Enter the fission frequency: ",
@@ -262,7 +263,7 @@ def run_module(module_number: int):
         target_population = ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
         if target_population == 0:
             print("\nProjection Timeframe")
-            projection_time = TimeAmount(time_amount_input(
+            projection_time = TimeAmount(*time_amount_input(
                 min = 1,
                 max = None,
                 prompt = "Enter the projection time: ",
@@ -270,7 +271,7 @@ def run_module(module_number: int):
             ))
     elif settings["condition"] == "projected":
         print("\nProjection Timeframe")
-        projection_time = TimeAmount(time_amount_input(
+        projection_time = TimeAmount(*time_amount_input(
             min = 1,
             max = None,
             prompt = "Enter the projection time: ",

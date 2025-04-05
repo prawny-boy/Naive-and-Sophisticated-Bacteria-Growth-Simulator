@@ -73,7 +73,7 @@ def print_table(data: list[list], table_length: int, table_title: str = "RESULTS
         print("")
     print("")
 
-def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", infinite_end:bool = False, avaliable_units:dict = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "d", "minute": "m", "second": "s"}) -> list[int, str]:
+def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", infinite_end:bool = False, avaliable_units:dict = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "m", "second": "s"}) -> list[int, str]:
     if infinite_end:
         max = "∞"
     cprint(prompt, "yellow", attrs=["bold"])
@@ -88,13 +88,24 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
                 for key in avaliable_units.keys():
                     print(f"{key}", end=", " if key != list(avaliable_units.keys())[-1] else "")
                 print(".")
+            elif user_input[0] in avaliable_units.keys() or user_input[0] in avaliable_units.values():
+                unit = user_input[0]
+                if user_input[0] in avaliable_units.values():
+                    unit = list(avaliable_units.keys())[list(avaliable_units.values()).index(unit)]
+                amount = 1
+                if (min <= 1 <= max) or (infinite_end and 1 >= min):
+                    cprint(f"Selected {amount} {unit}(s)", "green")
+                    return amount, unit
+                else:
+                    print(f"Invalid. Enter a number between {min} and {max}.")
+                    continue
             else:
                 print("Invalid. Enter in format 'number<space>unit'.")
             continue
         amount = user_input[0]
         if amount.isnumeric():
             amount = int(amount)
-            if amount <= min or (not infinite_end and amount > max):
+            if amount < min or (not infinite_end and amount > max):
                 print(f"Invalid. Enter a number between {min} and {max}.")
                 continue
         else:
@@ -107,4 +118,5 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
             else:
                 print(f"Invalid. Incorrect unit. Enter 'help' for list of units.")
                 continue
-        return (amount, unit)
+        cprint(f"Selected {amount} {unit}(s)", "green")
+        return amount, unit
