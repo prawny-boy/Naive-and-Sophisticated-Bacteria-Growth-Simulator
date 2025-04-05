@@ -91,8 +91,18 @@ def input_custom_settings():
     print("\nInput Custom Settings")
     naive_models = ranged_input(0, 10, "Enter the number of naive models: ")
     sophisticated_models = ranged_input(0, 10, "Enter the number of sophisticated models: ")
-    output = input("Enter the output type (final, list, columns): ")
-    condition = input("Enter the condition (population, varied, projected): ")
+    output = listed_input(
+        choices = {"final": "Final Population Size", 
+                   "list": "List of Populations over Time", 
+                   "columns": "Columns of Populations over Time (start, added, end)"},
+        prompt = "Select the output type:"
+    )
+    condition = listed_input(
+        choices = {"population": "Target Population", 
+                   "varied": "Varied Population",   
+                   "projected": "Projected Time"},
+        prompt = "Select the condition type:"
+    )
     return {
         "name": "Custom Settings",
         "output": output,
