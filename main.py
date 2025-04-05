@@ -59,13 +59,13 @@ class TimeAmount:
 # Functions
 def naive_model_input(number = ""):
     print(f"\nNaive Model {number}")
-    initial_population = input_number_value("Enter the initial population: ")
+    initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
     growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
     return [initial_population, growth_rate]
 
 def sophisticated_model_input(number = ""):
     print(f"\nSophisticated Model {number}")
-    initial_population = input_number_value("Enter the initial population: ")
+    initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
     growth_rate = input_time_amount(f"Enter the growth rate (%) and its time unit (d, hd, qd, h, m, s): ", "Invalid. First value must be a number. (E.g. 7% = 7)")
     fission_frequency = input_time_amount(f"Enter the fission frequency and its unit (d, hd, qd, h, m, s): ")
     return [initial_population, growth_rate, fission_frequency]
@@ -74,8 +74,11 @@ def projection_time_input():
     print("\nProjection Timeframe")
     return input_time_amount(f"Enter the projection time and its time unit (d, hd, qd, h, m, s): ")
 
-def target_population_input(extra_text = ""):
-    return input_number_value(f"Enter the target population {extra_text}: ")
+def target_population_input(projection_time_option=False):
+    if projection_time_option:
+        return ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
+    else:
+        return ranged_input(1, None, "Enter the target population: ", infinite_end=True)
 
 def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
@@ -107,17 +110,10 @@ def input_time_amount(prompt: str, validation_error_message: str = "Invalid. Fir
         except ValueError:
             print(validation_error_message)
 
-def input_number_value(prompt: str):
-    while True:
-        try:
-            return int(input(prompt))
-        except:
-            print("Invalid. Enter a number.")
-
 def input_custom_settings():
     print("\nInput Custom Settings")
-    naive_models = input_number_value("Enter the number of naive models: ")
-    sophisticated_models = input_number_value("Enter the number of sophisticated models: ")
+    naive_models = ranged_input(0, 10, "Enter the number of naive models: ")
+    sophisticated_models = ranged_input(0, 10, "Enter the number of sophisticated models: ")
     output = input("Enter the output type (final, list, columns): ")
     condition = input("Enter the condition (population, varied, projected): ")
     return {
