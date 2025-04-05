@@ -117,10 +117,10 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
 
         print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end="")
 
-        print(f", Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
+        print(f", Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}(s)") if model_type == "sophisticated" else print("")
 
         if projection_time != None:
-            print(f"Projected Timeframe: {projection_time.get_quantity()} {projection_time.get_unit()}")
+            print(f"Projected Timeframe: {projection_time.get_quantity()} {projection_time.get_unit()}(s)")
         if target_population != None:
             print(f"Target Population: {target_population}")
 

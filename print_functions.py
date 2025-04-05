@@ -78,7 +78,7 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
         max = "∞"
     cprint(prompt, "yellow", attrs=["bold"])
     while True:
-        user_input = input(f"Enter a number ({min}-{max}) and an unit: ").split()
+        user_input = input(f"Enter a number ({min}-{max}) and an unit: ").lower().split()
         if len(user_input) != 2:
             if user_input[0] in ["q", "quit"]:
                 cprint("Selected Quit Program", "green")
@@ -115,6 +115,16 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
         if unit not in list(avaliable_units.keys()):
             if unit in avaliable_units.values():
                 unit = list(avaliable_units.keys())[list(avaliable_units.values()).index(unit)]
+            elif unit[-1] == "s":
+                unit = unit[:-1]
+                if unit in avaliable_units.keys():
+                    pass
+                elif unit in avaliable_units.values():
+                    unit = list(avaliable_units.keys())[list(avaliable_units.values()).index(unit)]
+                else:
+                    print(f"Invalid. Incorrect unit. Enter 'help' for list of units.")
+                    continue
+
             else:
                 print(f"Invalid. Incorrect unit. Enter 'help' for list of units.")
                 continue
