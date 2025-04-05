@@ -93,7 +93,7 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
                 if user_input[0] in avaliable_units.values():
                     unit = list(avaliable_units.keys())[list(avaliable_units.values()).index(unit)]
                 amount = 1
-                if (min <= 1 <= max) or (infinite_end and 1 >= min):
+                if (not infinite_end and min <= 1 <= max) or (infinite_end and 1 >= min):
                     cprint(f"Selected {amount} {unit}(s)", "green")
                     return amount, unit
                 else:
