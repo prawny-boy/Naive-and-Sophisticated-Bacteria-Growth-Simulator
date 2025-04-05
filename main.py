@@ -208,22 +208,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
         for model, result in results.items():
             print(f"{model}: {result}")
 
-def run_module(module_number: int):
-    # run the module based on the module number and settings
-    """
-    (1) Compare a naive and sophisticated model
-    (2) Time for a sophisticated model to reach the target population
-    (3) Compare two sophisticated population models
-    (4) Generate detailed projections formatted as columns
-    (5) Model increases in fission-event frequency
-    """
-    if module_number == 0:
-        settings = input_custom_settings()
-        print(f"Settings selected: {settings}")
-    else:
-        settings = MODULE_SETTINGS[module_number - 1]
-    print(f"\nModule {module_number}: {settings['name']}")
-
+def run_inputs(settings:dict[str, str|int|list[str]]):
     # GET USER INPUT
     models_data = []
     for i in range(settings["naive_models"]):
@@ -277,6 +262,26 @@ def run_module(module_number: int):
             prompt = "Enter the projection time: ",
             infinite_end=True,
         ))
+    
+    return models_data, projection_time, target_population
+
+def run_module(module_number: int):
+    # run the module based on the module number and settings
+    """
+    (1) Compare a naive and sophisticated model
+    (2) Time for a sophisticated model to reach the target population
+    (3) Compare two sophisticated population models
+    (4) Generate detailed projections formatted as columns
+    (5) Model increases in fission-event frequency
+    """
+    if module_number == 0:
+        settings = input_custom_settings()
+        print(f"Settings selected: {settings}")
+    else:
+        settings = MODULE_SETTINGS[module_number - 1]
+    print(f"\nModule {module_number}: {settings['name']}")
+    
+    models_data, projection_time, target_population = run_inputs(settings)
 
     # summarise data inputted
     summary(models_data, projection_time, target_population)
