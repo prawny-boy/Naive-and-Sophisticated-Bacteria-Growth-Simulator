@@ -1,6 +1,6 @@
 from print_functions import *
 
-SECONDS_IN_UNIT = {"day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "seconds": 1}
+SECONDS_IN_UNIT = {"day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "second": 1}
 SIMULATION_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
