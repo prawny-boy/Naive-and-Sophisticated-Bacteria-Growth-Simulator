@@ -270,18 +270,11 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
-    """
-    (1) Compare a naive and sophisticated model
-    (2) Time for a sophisticated model to reach the target population
-    (3) Compare two sophisticated population models
-    (4) Generate detailed projections formatted as columns
-    (5) Model increases in fission-event frequency
-    """
     if module_number == 0:
         settings = input_custom_settings()
     else:
         settings = MODULE_SETTINGS[module_number - 1]
-    print_header(f"Module {module_number}: {settings['name']}")
+    print_header(f"Simulation {module_number}: {settings['name']}")
     
     models_data, projection_time, target_population = run_inputs(settings)
 
@@ -296,4 +289,37 @@ def run_module(module_number: int):
     print_results(results, opening_population, added_population, final_population, time_needed, settings["output"], settings["condition"])
 
 if __name__ == "__main__":
-    run_module(0)
+    print("-------------------------------------------------------------------")
+    cprint("Population Modelling Bacteria Simulator", attrs=["bold", "underline"])
+    cprint("By Sean Chan", attrs=["bold"])
+    cprint("Disclaimer: This was made for a school project. Do not take seriously.")
+    print("-------------------------------------------------------------------")
+    command = None
+    while True:
+        command:str = listed_input(
+            choices = {
+                "1": "Compare a naive and sophisticated model", 
+                "2": "Time for a sophisticated model to reach the target population", 
+                "3": "Compare two sophisticated population models", 
+                "4": "Generate detailed projections formatted as columns", 
+                "5": "Model increases in fission-event frequency (Unfinished)",
+                "0": "Custom Settings (Sandbox)",
+                "h": "Help",
+                "s": "Settings",
+                "q": "Quit"
+            },
+            prompt = "Select a simulation to run:",
+            return_key=True,
+        )
+        if command.isnumeric():
+            run_module(int(command))
+        elif command == "h":
+            print_title("Help")
+            print("This is a population modelling simulator for bacteria.")
+            print("You can select different models and conditions to simulate the growth of bacteria.")
+            print("You can also input custom settings to run your own simulations.")
+            print("Select a simulation to run by entering the number corresponding to the simulation.")
+        elif command == "s":
+            print_title("Settings")
+            # add settings here
+            print("Settings are currently not implemented.")
