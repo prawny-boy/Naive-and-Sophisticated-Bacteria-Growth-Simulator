@@ -1,13 +1,14 @@
 from print_functions import *
 
 SECONDS_IN_UNIT = {"day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "seconds": 1}
-MODULE_SETTINGS = [
+SIMULATION_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
         "output": "final",
         "condition": "projected",
         "naive_models": 1,
         "sophisticated_models": 1,
+        "graph": False,
     },
     {
         "name": "Time for a sophisticated model to reach the target population",
@@ -15,6 +16,7 @@ MODULE_SETTINGS = [
         "condition": "population",
         "naive_models": 0,
         "sophisticated_models": 1,
+        "graph": False,
     },
     {
         "name": "Compare population models",
@@ -22,6 +24,7 @@ MODULE_SETTINGS = [
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 2,
+        "graph": False,
     },
     {
         "name": "Generate detailed projections formatted as columns",
@@ -29,6 +32,7 @@ MODULE_SETTINGS = [
         "condition": "varied",
         "naive_models": 0,
         "sophisticated_models": 1,
+        "graph": False,
     },
     {
         "name": "Model increases in fission-event frequency",
@@ -36,7 +40,50 @@ MODULE_SETTINGS = [
         "condition": "fission",
         "naive_models": 0,
         "sophisticated_models": 1,
+        "graph": False,
     },
+    # Presets start here
+    {
+        "name": "Graph the comparsion of a naive and sophisticated model",
+        "output": "list",
+        "condition": "projected",
+        "naive_models": 1,
+        "sophisticated_models": 1,
+        "graph": True,
+    },
+    {
+        "name": "Graph the comparison of two sophisticated models",
+        "output": "list",
+        "condition": "projected",
+        "naive_models": 0,
+        "sophisticated_models": 2,
+        "graph": True,
+    },
+    {
+        "name": "Compare two naive models",
+        "output": "final",
+        "condition": "projected",
+        "naive_models": 2,
+        "sophisticated_models": 0,
+        "graph": False,
+    },
+    {
+        "name": "Graph the population growth of a naive model",
+        "output": "list",
+        "condition": "projected",
+        "naive_models": 1,
+        "sophisticated_models": 0,
+        "graph": True,
+    },
+    {
+        "name": "Graph the population growth of a sophisticated model",
+        "output": "list",
+        "condition": "projected",
+        "naive_models": 0,
+        "sophisticated_models": 1,
+        "graph": True,
+    },
+
 ]
 
 class TimeAmount:
@@ -274,7 +321,7 @@ def run_module(module_number: int):
     if module_number == 0:
         settings = input_custom_settings()
     else:
-        settings = MODULE_SETTINGS[module_number - 1]
+        settings = SIMULATION_SETTINGS[module_number - 1]
     print_header(f"Simulation {module_number}: {settings['name']}")
     
     models_data, projection_time, target_population = run_inputs(settings)
@@ -305,6 +352,7 @@ if __name__ == "__main__":
                 "4": "Generate detailed projections formatted as columns", 
                 "5": "Model increases in fission-event frequency (Unfinished)",
                 "0": "Custom Simulation Settings (Sandbox)",
+                "p": "Run Presets for Simulations",
                 "h": "Help"
             },
             prompt = "Main Menu",
@@ -312,6 +360,20 @@ if __name__ == "__main__":
         )
         if command.isnumeric():
             run_module(int(command))
+        if command == "p":
+            print_title("Presets")
+            preset = listed_input(
+                choices = {
+                    "1": "Graph the comparsion of a naive and sophisticated model", 
+                    "2": "Graph the comparison of two sophisticated models",
+                    "3": "Compare two naive models", 
+                    "4": "Graph the population growth of a naive model",
+                    "5": "Graph the population growth of a sophisticated model",
+                },
+                prompt = "Select a preset:",
+                return_key=True,
+            )
+            run_module(int(preset) + 5)
         elif command == "h":
             print_title("Help")
             print("""This is a population modelling simulator for bacteria. \nIt simulates the growth of bacteria using naive (linear) and sophisticated (exponential) models.
