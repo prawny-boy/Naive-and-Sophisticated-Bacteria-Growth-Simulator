@@ -130,3 +130,11 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
                 continue
         cprint(f"Selected {amount} {unit}(s)", "green")
         return amount, unit
+
+def print_title(title: str, colour: str = "red", attrs: list = ["bold"]):
+    print("")
+    cprint(title.title(), colour, attrs=attrs)
+
+def print_header(header: str, colour: str = "yellow", attrs: list = ["bold", "underline"]):
+    print("")
+    cprint(header.upper(), colour, attrs=attrs)

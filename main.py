@@ -72,7 +72,7 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
 def input_custom_settings():
-    print("\nInput Custom Settings")
+    print_title("Input Custom Settings")
     naive_models = ranged_input(0, 10, "Enter the number of naive models: ")
     sophisticated_models = ranged_input(0, 10, "Enter the number of sophisticated models: ")
     output = listed_input(
@@ -99,7 +99,7 @@ def input_custom_settings():
 
 def summary(models_data, projection_time:TimeAmount, target_population:TimeAmount):
     # write a summary of what the user inputted
-    print("\nSummary")
+    print_title("Summary")
     naive_model_count = 0
     sophisticated_model_count = 0
     for model in models_data:
@@ -188,7 +188,7 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
     return calculation_data, time_needed
 
 def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], time_needed:TimeAmount, output_as:str, condition:str):
-    print("\nResults")
+    print_title("Results")
     if output_as == "columns":
         # format the output as columns
         columns = zip(opening_population, added_population, final_population)
@@ -212,7 +212,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
     # GET USER INPUT
     models_data = []
     for i in range(settings["naive_models"]):
-        print(f"\nNaive Model {i + 1}")
+        print_title(f"Naive Model {i + 1}")
         initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
         growth_rate = TimeAmount(*time_amount_input(
             min = 1,
@@ -221,7 +221,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
         ))
         models_data.append(["naive"] + [initial_population, growth_rate] + [None])
     for i in range(settings["sophisticated_models"]):
-        print(f"\nSophisticated Model {i + 1}")
+        print_title(f"Sophisticated Model {i + 1}")
         initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
         growth_rate = TimeAmount(*time_amount_input(
             min = 1,
@@ -241,13 +241,13 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
     projection_time = None
 
     if settings["condition"] == "population":
-        print("\nTarget Population")
+        print_title("Target Population")
         target_population = ranged_input(1, None, "Enter the target population: ", infinite_end=True)
     elif settings["condition"] == "varied":
-        print("\nTarget Population")
+        print_title("Target Population")
         target_population = ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
         if target_population == 0:
-            print("\nProjection Timeframe")
+            print_title("Projection Timeframe")
             projection_time = TimeAmount(*time_amount_input(
                 min = 1,
                 max = None,
@@ -255,7 +255,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
                 infinite_end=True,
             ))
     elif settings["condition"] == "projected":
-        print("\nProjection Timeframe")
+        print_title("Projection Timeframe")
         projection_time = TimeAmount(*time_amount_input(
             min = 1,
             max = None,
@@ -274,12 +274,12 @@ def run_module(module_number: int):
     (4) Generate detailed projections formatted as columns
     (5) Model increases in fission-event frequency
     """
+    print_header(f"Module {module_number}: {settings['name']}")
     if module_number == 0:
         settings = input_custom_settings()
         print(f"Settings selected: {settings}")
     else:
         settings = MODULE_SETTINGS[module_number - 1]
-    print(f"\nModule {module_number}: {settings['name']}")
     
     models_data, projection_time, target_population = run_inputs(settings)
 
