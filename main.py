@@ -241,23 +241,24 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
 def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], time_needed:TimeAmount, output_as:str, condition:str):
     print_title("Results")
     if output_as == "columns":
-        # format the output as columns
-        columns = zip(opening_population, added_population, final_population)
-        for column in columns:
-            print(column)
+        for i in range(len(results.keys())):
+            print_table(
+                data=[opening_population[i], added_population[i], final_population[i]],
+                table_length=len(opening_population[i]),
+                table_title=results.keys()[i],
+                titles=["Opening", "Added", "Final"],
+            )
     elif output_as == "list":
-        print_list = []
         for model, result in results.items(): 
-            print_list.append(result)
-        if condition == "population":
-            print(f"Forward Projection: {print_list}")
-            print(f"\nTime taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}")
-        else:
-            print(f"Models (In order of input): {print_list}")
+            if condition == "population":
+                print(f"Forward Projection: {result}")
+                print(f"\nTime taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}")
+            elif condition == "projected":
+                print(f"Over Time: {result}")
+                print(f"Final Population: {result[-1]}")
     elif output_as == "final":
-        # print the results based on the output type
         for model, result in results.items():
-            print(f"{model}: {result}")
+            print(f"{model}: {result[-1]}")
 
 def run_inputs(settings:dict[str, str|int|list[str]]):
     # GET USER INPUT
@@ -290,6 +291,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
     # Get projection time or target population
     target_population = None
     projection_time = None
+    condition = settings["condition"]
 
     if settings["condition"] == "population":
         print_title("Target Population")
@@ -298,6 +300,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
         print_title("Target Population")
         target_population = ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
         if target_population == 0:
+            condition = "projected"
             print_title("Projection Timeframe")
             projection_time = TimeAmount(*time_amount_input(
                 min = 1,
@@ -305,6 +308,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
                 prompt = "Enter the projection time: ",
                 infinite_end=True,
             ))
+        else: condition = "population"
     elif settings["condition"] == "projected":
         print_title("Projection Timeframe")
         projection_time = TimeAmount(*time_amount_input(
@@ -314,7 +318,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
             infinite_end=True,
         ))
     
-    return models_data, projection_time, target_population
+    return models_data, projection_time, target_population, condition
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -324,7 +328,7 @@ def run_module(module_number: int):
         settings = SIMULATION_SETTINGS[module_number - 1]
     print_header(f"Simulation {module_number}: {settings['name']}")
     
-    models_data, projection_time, target_population = run_inputs(settings)
+    models_data, projection_time, target_population, condition = run_inputs(settings)
 
     # summarise data inputted
     summary(models_data, projection_time, target_population)
@@ -334,7 +338,7 @@ def run_module(module_number: int):
     results, opening_population, added_population, final_population = calculate_models(calculation_data)
 
     # PRINT RESULTS
-    print_results(results, opening_population, added_population, final_population, time_needed, settings["output"], settings["condition"])
+    print_results(results, opening_population, added_population, final_population, time_needed, settings["output"], condition)
 
 if __name__ == "__main__":
     print("-------------------------------------------------------------------")
