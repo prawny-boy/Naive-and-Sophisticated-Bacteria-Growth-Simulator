@@ -207,13 +207,13 @@ def calculate_models(calculate_data:list[list[list]]):
     
     return results, opening_population, added_population, final_population
 
-def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], projection_time:TimeAmount|None, target_population:int|None, output_as:str):
+def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], projection_time:TimeAmount|None, projected_time_unit:str, target_population:int|None, output_as:str):
     # 2 ways, stop after a target population or stop after a projected time
     # the last way is just to print out the final one
     calculation_data:list[list[list[str, int, TimeAmount, TimeAmount]]] = []
     time_needed = None
     if target_population:
-        time_needed = 1 # IMPORTANT Calculate the projection time needed to exceed the target population
+        time_needed = TimeAmount(1, projected_time_unit) # IMPORTANT Calculate the projection time needed to exceed the target population
 
     if output_as == "final":
         for i in range(len(models_data)):
@@ -230,11 +230,11 @@ def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], proj
             if projection_time:
                 for _ in range(int(projection_time.get_quantity())):
                     projection_time_count += 1
-                    calculation_data[i].append(models_data[i] + [projection_time_count]) # add a calculation to the new model
+                    calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
             elif target_population:
-                for _ in range(time_needed):
+                for _ in range(time_needed.get_quantity()):
                     projection_time_count += 1
-                    calculation_data[i].append(models_data[i] + [projection_time_count])
+                    calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, time_needed.get_unit())])
     
     return calculation_data, time_needed
 
@@ -251,14 +251,14 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
     elif output_as == "list":
         for model, result in results.items(): 
             if condition == "population":
-                print(f"Forward Projection: {result}")
-                print(f"\nTime taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}")
+                print(f"Forward Projection for {model}: {result}")
+                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}\n")
             elif condition == "projected":
-                print(f"Over Time: {result}")
-                print(f"Final Population: {result[-1]}")
+                print(f"Over Time for {model}: {result}")
+                print(f"Final Population: {result[-1]}\n")
     elif output_as == "final":
         for model, result in results.items():
-            print(f"{model}: {result[-1]}")
+            print(f"{model}: {result[-1]}\n")
 
 def run_inputs(settings:dict[str, str|int|list[str]]):
     # GET USER INPUT
@@ -318,7 +318,16 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
             infinite_end=True,
         ))
     
-    return models_data, projection_time, target_population, condition
+    # special conditions
+    if condition == "population":
+        if settings["naive_models"] > 0:
+            projection_time_unit = input("Enter a projected time unit for naive models:")
+        else:
+            projection_time_unit = fission_frequency.get_unit()
+    else:
+        projection_time_unit = None
+    
+    return models_data, projection_time, target_population, condition, projection_time_unit
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -328,13 +337,13 @@ def run_module(module_number: int):
         settings = SIMULATION_SETTINGS[module_number - 1]
     print_header(f"Simulation {module_number}: {settings['name']}")
     
-    models_data, projection_time, target_population, condition = run_inputs(settings)
+    models_data, projection_time, target_population, condition, projection_time_unit = run_inputs(settings)
 
     # summarise data inputted
     summary(models_data, projection_time, target_population)
     
     # CALCULATIONS
-    calculation_data, time_needed = compile_data(models_data, projection_time, target_population, settings["output"])
+    calculation_data, time_needed = compile_data(models_data, projection_time, projection_time_unit, target_population, settings["output"])
     results, opening_population, added_population, final_population = calculate_models(calculation_data)
 
     # PRINT RESULTS
@@ -373,10 +382,13 @@ if __name__ == "__main__":
                     "3": "Compare two naive models", 
                     "4": "Graph the population growth of a naive model",
                     "5": "Graph the population growth of a sophisticated model",
+                    "b": "Back"
                 },
                 prompt = "Select a preset:",
                 return_key=True,
             )
+            if preset == "b":
+                continue
             run_module(int(preset) + 5)
         elif command == "h":
             print_title("Help")
