@@ -86,7 +86,7 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
             if user_input[0] in ["q", "quit"]:
                 cprint("Selected Quit Program", "green")
                 sys.exit()
-            elif user_input[0] in ["help", "h"]:
+            elif user_input[0] == "help":
                 cprint("Available units:", "yellow")
                 for key in avaliable_units.keys():
                     print(f"{key}", end=", " if key != list(avaliable_units.keys())[-1] else "")

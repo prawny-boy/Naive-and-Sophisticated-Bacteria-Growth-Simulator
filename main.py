@@ -20,7 +20,7 @@ SIMULATION_SETTINGS = [
     },
     {
         "name": "Compare population models",
-        "output": "final",
+        "output": "list",
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 2,
@@ -196,14 +196,18 @@ def calculate_models(calculate_data:list[list[list]]):
         added_population.append([])
         final_population.append([])
 
+        last_population = 0
         for calculation in calculate_data[i]:
-            initial_population = calculation[1]
+            if last_population == 0:
+                last_population = calculation[1]
             model_result = calculate_population_size(*calculation[:5])
             results[model_name].append(model_result) # add the result to the dictionary of results
 
-            opening_population[i].append(initial_population)
-            added_population[i].append(model_result - initial_population)
+            opening_population[i].append(last_population)
+            added_population[i].append(model_result - last_population)
             final_population[i].append(model_result)
+
+            last_population = model_result
     
     return results, opening_population, added_population, final_population
 
@@ -245,11 +249,11 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             print_table(
                 data=[opening_population[i], added_population[i], final_population[i]],
                 table_length=len(opening_population[i]),
-                table_title=results.keys()[i],
+                table_title=list(results.keys())[i],
                 titles=["Opening", "Added", "Final"],
             )
     elif output_as == "list":
-        for model, result in results.items(): 
+        for model, result in results.items():
             if condition == "population":
                 print(f"Forward Projection for {model}: {result}")
                 print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}\n")
