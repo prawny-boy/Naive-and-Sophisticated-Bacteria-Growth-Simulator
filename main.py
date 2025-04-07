@@ -107,14 +107,15 @@ class TimeAmount:
 def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
     projection_time.convert(growth_rate.get_unit())
-    growth_rate.quantity /= 100
+    rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit())
+    rate.quantity /= 100
 
     if model_type == "naive":
-        return initial_population + (growth_rate.get_quantity() * initial_population * projection_time.get_quantity())
+        return initial_population + (rate.get_quantity() * initial_population * projection_time.get_quantity())
 
     if model_type == "sophisticated":
-        fission_frequency.convert(growth_rate.get_unit())
-        rate_over_fission = growth_rate.get_quantity() * fission_frequency.get_quantity()
+        fission_frequency.convert(rate.get_unit())
+        rate_over_fission = rate.get_quantity() * fission_frequency.get_quantity()
         total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
@@ -202,6 +203,7 @@ def calculate_models(calculate_data:list[list[list]]):
                 last_population = calculation[1]
             model_result = calculate_population_size(*calculation[:5])
             results[model_name].append(model_result) # add the result to the dictionary of results
+            print(calculation[2].get_quantity(), calculation[3].get_quantity(), calculation[4].get_quantity(), model_result)
 
             opening_population[i].append(last_population)
             added_population[i].append(model_result - last_population)
