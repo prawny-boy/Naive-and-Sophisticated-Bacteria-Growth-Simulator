@@ -80,6 +80,9 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
     while True:
         user_input = input(f"Enter a number ({min}-{max}) and an unit: ").lower().split()
         if len(user_input) != 2:
+            if len(user_input) == 0:
+                print("Invalid. Enter in format 'number<space>unit'.")
+                continue
             if user_input[0] in ["q", "quit"]:
                 cprint("Selected Quit Program", "green")
                 sys.exit()
