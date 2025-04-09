@@ -120,7 +120,6 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
 def input_custom_settings():
-    # add showing table
     print_title("Input Custom Settings")
     naive_models = ranged_input(0, 10, "Enter the number of naive models: ")
     sophisticated_models = ranged_input(0, 10, "Enter the number of sophisticated models: ")
@@ -149,8 +148,7 @@ def input_custom_settings():
         "sophisticated_models": sophisticated_models,
     }
 
-def summary(models_data, projection_time:TimeAmount, target_population:TimeAmount):
-    # write a summary of what the user inputted
+def summary(models_data, projection_time:TimeAmount, target_population:TimeAmount, condition:str):
     print_title("Summary")
     naive_model_count = 0
     sophisticated_model_count = 0
@@ -171,13 +169,14 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
 
         print(f", Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}(s)") if model_type == "sophisticated" else print("")
 
-        if projection_time != None:
+        if condition == "projected":
             print(f"Projected Timeframe: {projection_time.get_quantity()} {projection_time.get_unit()}(s)")
-        if target_population != None:
+        if condition == "population":
             print(f"Target Population: {target_population}")
 
 def calculate_models(calculate_data:list[list[list]]):
     results:dict[str, list] = {}
+    model_configuration:dict[str, list[int|TimeAmount]] = {}
     model_result = 0
     sophisticated_model_count = 1
     naive_model_count = 1
@@ -192,6 +191,7 @@ def calculate_models(calculate_data:list[list[list]]):
             model_name = f"Sophisticated Model {sophisticated_model_count}"
             sophisticated_model_count += 1
         results[model_name] = [] # add a new model to the dictionary of results
+        model_configuration[model_name] = calculate_data[i][-1] # add a new model to the model configurations
         
         opening_population.append([])
         added_population.append([])
@@ -203,7 +203,6 @@ def calculate_models(calculate_data:list[list[list]]):
                 last_population = calculation[1]
             model_result = calculate_population_size(*calculation[:5])
             results[model_name].append(model_result) # add the result to the dictionary of results
-            print(calculation[2].get_quantity(), calculation[3].get_quantity(), calculation[4].get_quantity(), model_result)
 
             opening_population[i].append(round(last_population, 2))
             added_population[i].append(round(model_result - last_population, 2))
@@ -211,69 +210,68 @@ def calculate_models(calculate_data:list[list[list]]):
 
             last_population = model_result
     
-    return results, opening_population, added_population, final_population
+    return results, opening_population, added_population, final_population, model_configuration
 
-def compile_data(models_data: list[list[str, int, TimeAmount, TimeAmount]], projection_time:TimeAmount|None, projected_time_unit:str, target_population:int|None, output_as:str):
-    # 2 ways, stop after a target population or stop after a projected time
-    # the last way is just to print out the final one
+def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, projected_time_unit:str, target_population:int|None, condition:str, output_as:str):
     calculation_data:list[list[list[str, int, TimeAmount, TimeAmount]]] = []
     time_needed = None
-    if target_population:
+    if condition == "population":
         time_needed = TimeAmount(1, projected_time_unit) # IMPORTANT Calculate the projection time needed to exceed the target population
+        target_population # use this
 
     if output_as == "final":
         for i in range(len(models_data)):
             calculation_data.append([]) # add a new model to the list
-            if projection_time: # if not 0 or None
+            if condition == "projected": # if not 0 or None
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
-            elif target_population:
-                calculation_data[i].append(models_data[i] + [time_needed]) 
+            elif condition == "population":
+                calculation_data[i].append(models_data[i] + [time_needed])
     
     if output_as == "list" or output_as == "columns":
         for i in range(len(models_data)):
             projection_time_count = 0
             calculation_data.append([]) # add a new model to the list
-            if projection_time:
+            if condition == "projected":
                 for _ in range(int(projection_time.get_quantity())):
                     projection_time_count += 1
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
-            elif target_population:
+            elif condition == "population":
                 for _ in range(time_needed.get_quantity()):
                     projection_time_count += 1
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, time_needed.get_unit())])
     
     return calculation_data, time_needed
 
-def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], time_needed:TimeAmount, output_as:str, condition:str):
+def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], time_needed:TimeAmount, output_as:str, condition:str):
     print_title("Results")
     if output_as == "columns":
         for i in range(len(results.keys())):
+            time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
             print_table(
-                data=[opening_population[i], added_population[i], final_population[i]],
-                table_length=len(opening_population[i]),
+                data=[[n for n in range(len(opening_population[i]) + 1)], ([1000] + opening_population[i]), (["-"] + added_population[i]), (["-"] + final_population[i])],
+                table_length=len(opening_population[i]) + 1,
                 table_title=list(results.keys())[i],
-                titles=["Opening", "Added", "Final"],
+                titles=[f"Time (in {time_amount_of_condition.get_unit()}s)", "Opening", "Added", "Final"],
             )
             if condition == "population":
-                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}\n")
+                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}(s)\n")
             elif condition == "projected":
-                print(f"Final Population: {final_population[i][-1]}\n")
+                print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {final_population[i][-1]}\n")
     
     elif output_as == "list":
         for model, result in results.items():
             if condition == "population":
                 print(f"Forward Projection for {model}: {result}")
-                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}\n")
+                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}(s)\n")
             elif condition == "projected":
                 print(f"Over Time for {model}: {result}")
-                print(f"Final Population: {result[-1]}\n")
+                print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {result[-1]}\n")
     
     elif output_as == "final":
         for model, result in results.items():
             print(f"{model}: {result[-1]}\n")
 
 def run_inputs(settings:dict[str, str|int|list[str]]):
-    # GET USER INPUT
     models_data = []
     for i in range(settings["naive_models"]):
         print_title(f"Naive Model {i + 1}")
@@ -303,11 +301,12 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
     # Get projection time or target population
     target_population = None
     projection_time = None
-    condition = settings["condition"]
+    condition = None
 
     if settings["condition"] == "population":
         print_title("Target Population")
         target_population = ranged_input(1, None, "Enter the target population: ", infinite_end=True)
+        condition = "population"
     elif settings["condition"] == "varied":
         print_title("Target Population")
         target_population = ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
@@ -329,6 +328,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
             prompt = "Enter the projection time: ",
             infinite_end=True,
         ))
+        condition = "projected"
     
     # special conditions
     if condition == "population":
@@ -351,15 +351,15 @@ def run_module(module_number: int):
     
     models_data, projection_time, target_population, condition, projection_time_unit = run_inputs(settings)
 
-    # summarise data inputted
-    summary(models_data, projection_time, target_population)
+    # SUMMARY
+    summary(models_data, projection_time, target_population, condition)
     
     # CALCULATIONS
-    calculation_data, time_needed = compile_data(models_data, projection_time, projection_time_unit, target_population, settings["output"])
-    results, opening_population, added_population, final_population = calculate_models(calculation_data)
+    calculation_data, time_needed = compile_data(models_data, projection_time, projection_time_unit, target_population, condition, settings["output"])
+    results, opening_population, added_population, final_population, model_configuration = calculate_models(calculation_data)
 
     # PRINT RESULTS
-    print_results(results, opening_population, added_population, final_population, time_needed, settings["output"], condition)
+    print_results(results, opening_population, added_population, final_population, model_configuration, time_needed, settings["output"], condition)
 
 if __name__ == "__main__":
     print("-------------------------------------------------------------------")
