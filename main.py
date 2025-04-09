@@ -205,9 +205,9 @@ def calculate_models(calculate_data:list[list[list]]):
             results[model_name].append(model_result) # add the result to the dictionary of results
             print(calculation[2].get_quantity(), calculation[3].get_quantity(), calculation[4].get_quantity(), model_result)
 
-            opening_population[i].append(last_population)
-            added_population[i].append(model_result - last_population)
-            final_population[i].append(model_result)
+            opening_population[i].append(round(last_population, 2))
+            added_population[i].append(round(model_result - last_population, 2))
+            final_population[i].append(round(model_result, 2))
 
             last_population = model_result
     
