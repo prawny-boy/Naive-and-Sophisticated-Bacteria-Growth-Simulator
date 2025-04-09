@@ -210,7 +210,7 @@ def calculate_models(calculate_data:list[list[list]]):
 
             last_population = model_result
     
-    return results, opening_population, added_population, final_population, model_configuration
+    return (results, opening_population, added_population, final_population, model_configuration)
 
 def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, projected_time_unit:str, target_population:int|None, condition:str, output_as:str):
     calculation_data:list[list[list[str, int, TimeAmount, TimeAmount]]] = []
@@ -242,7 +242,7 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
     
     return calculation_data, time_needed
 
-def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], time_needed:TimeAmount, output_as:str, condition:str):
+def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], time_needed:TimeAmount, condition:str, output_as:str):
     print_title("Results")
     if output_as == "columns":
         for i in range(len(results.keys())):
@@ -354,12 +354,12 @@ def run_module(module_number: int):
     # SUMMARY
     summary(models_data, projection_time, target_population, condition)
     
-    # CALCULATIONS
-    calculation_data, time_needed = compile_data(models_data, projection_time, projection_time_unit, target_population, condition, settings["output"])
-    results, opening_population, added_population, final_population, model_configuration = calculate_models(calculation_data)
+    # COMPILE DATA FOR CACULATION
+    output_as = settings["output"]
+    calculation_data, time_needed = compile_data(models_data, projection_time, projection_time_unit, target_population, condition, output_as)
 
-    # PRINT RESULTS
-    print_results(results, opening_population, added_population, final_population, model_configuration, time_needed, settings["output"], condition)
+    # CALCULATE & PRINT RESULTS
+    print_results(*calculate_models(calculation_data), time_needed, condition, output_as)
 
 if __name__ == "__main__":
     print("-------------------------------------------------------------------")
