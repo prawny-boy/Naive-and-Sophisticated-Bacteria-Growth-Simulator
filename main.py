@@ -254,6 +254,11 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 table_title=list(results.keys())[i],
                 titles=["Opening", "Added", "Final"],
             )
+            if condition == "population":
+                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}\n")
+            elif condition == "projected":
+                print(f"Final Population: {final_population[i][-1]}\n")
+    
     elif output_as == "list":
         for model, result in results.items():
             if condition == "population":
@@ -262,6 +267,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             elif condition == "projected":
                 print(f"Over Time for {model}: {result}")
                 print(f"Final Population: {result[-1]}\n")
+    
     elif output_as == "final":
         for model, result in results.items():
             print(f"{model}: {result[-1]}\n")
