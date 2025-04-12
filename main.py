@@ -1,6 +1,7 @@
 from print_functions import *
 
 SECONDS_IN_UNIT = {"day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "second": 1}
+UNITS_ABBREVIATION = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "m", "second": "s"}
 SIMULATION_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
@@ -114,8 +115,11 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         return initial_population + (rate.get_quantity() * initial_population * projection_time.get_quantity())
 
     if model_type == "sophisticated":
-        fission_frequency.convert(rate.get_unit())
-        rate_over_fission = rate.get_quantity() * fission_frequency.get_quantity()
+        if fission_frequency.get_quantity() == 1:
+            fission_frequency.convert(rate.get_unit())
+            rate_over_fission = rate.get_quantity() * fission_frequency.get_quantity()
+        else:
+            rate_over_fission = rate.get_quantity() / fission_frequency.get_quantity()
         total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
@@ -290,12 +294,22 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
             max = 100,
             prompt = "Enter the growth rate % (7% = 7): ",
         ))
-        fission_frequency = TimeAmount(*time_amount_input(
+        fission_frequency = time_amount_input(
             min = 1,
-            max = None,
-            prompt = "Enter the fission frequency: ",
+            max = 1,
+            prompt = "Enter the fission-event frequency time unit (or custom): ",
             infinite_end=True,
-        ))
+        avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
+        )
+        if fission_frequency == "custom":
+            fission_frequency = ranged_input(
+                start=1, 
+                end=None, 
+                prompt="Enter the number of fission-events per growth rate unit: ",
+                infinite_end=True
+            )
+            fission_frequency = TimeAmount(fission_frequency, growth_rate.get_unit())
+        else: fission_frequency = TimeAmount(*fission_frequency)
         models_data.append(["sophisticated"] + [initial_population, growth_rate, fission_frequency])
 
     # Get projection time or target population
