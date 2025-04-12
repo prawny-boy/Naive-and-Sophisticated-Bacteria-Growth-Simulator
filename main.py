@@ -118,9 +118,11 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         if fission_frequency.get_quantity() == 1:
             fission_frequency.convert(rate.get_unit())
             rate_over_fission = rate.get_quantity() * fission_frequency.get_quantity()
+            total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
         else:
             rate_over_fission = rate.get_quantity() / fission_frequency.get_quantity()
-        total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
+            total_fission_events = projection_time.get_quantity() * fission_frequency.get_quantity()
+        
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
 def input_custom_settings():
@@ -171,7 +173,7 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
 
         print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end="")
 
-        print(f", Fission Event Frequency: {fission_frequency.get_quantity()} {fission_frequency.get_unit()}(s)") if model_type == "sophisticated" else print("")
+        print(f", Fission Event Frequency: {fission_frequency.get_quantity()} per {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
 
         if condition == "projected":
             print(f"Projected Timeframe: {projection_time.get_quantity()} {projection_time.get_unit()}(s)")
@@ -298,10 +300,10 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
             min = 1,
             max = 1,
             prompt = "Enter the fission-event frequency time unit (or custom): ",
-            infinite_end=True,
-        avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
+            special=["custom"],
+            avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
         )
-        if fission_frequency == "custom":
+        if "custom" in fission_frequency:
             fission_frequency = ranged_input(
                 start=1, 
                 end=None, 

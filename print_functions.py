@@ -73,12 +73,15 @@ def print_table(data: list[list], table_length: int, table_title: str = "RESULTS
         print("")
     print("")
 
-def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", infinite_end:bool = False, avaliable_units:dict = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "m", "second": "s"}) -> list[int, str]:
+def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", infinite_end:bool = False, avaliable_units:dict = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "m", "second": "s"}, special:list = ["custom"]) -> list[int|str]:
     if infinite_end:
         max = "∞"
     cprint(prompt, "yellow", attrs=["bold"])
     while True:
-        user_input = input(f"Enter a number ({min}-{max}) and an unit: ").lower().split()
+        if min == max and not infinite_end:
+            user_input = input(f"Enter a unit: ").lower().split()
+        else:
+            user_input = input(f"Enter a number ({min}-{max}) and an unit: ").lower().split()
         if len(user_input) != 2:
             if len(user_input) == 0:
                 print("Invalid. Enter in format 'number<space>unit'.")
@@ -97,7 +100,10 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
                     unit = list(avaliable_units.keys())[list(avaliable_units.values()).index(unit)]
                 amount = 1
                 if (not infinite_end and min <= 1 <= max) or (infinite_end and 1 >= min):
-                    cprint(f"Selected {amount} {unit}(s)", "green")
+                    if unit not in special:
+                        cprint(f"Selected {amount} {unit}(s)", "green")
+                    else:
+                        cprint(f"Selected {unit}", "green")
                     return amount, unit
                 else:
                     print(f"Invalid. Enter a number between {min} and {max}.")
@@ -131,7 +137,10 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
             else:
                 print(f"Invalid. Incorrect unit. Enter 'help' for list of units.")
                 continue
-        cprint(f"Selected {amount} {unit}(s)", "green")
+        if unit not in special:
+            cprint(f"Selected {amount} {unit}(s)", "green")
+        else:
+            cprint(f"Selected {unit}", "green")
         return amount, unit
 
 def print_title(title: str, colour: str = "red", attrs: list = ["bold"]):
