@@ -48,7 +48,7 @@ SIMULATION_SETTINGS = [
     {
         "name": "Graph the comparsion of a naive and sophisticated model",
         "output": "list",
-        "condition": "projected",
+        "condition": "varied",
         "naive_models": 1,
         "sophisticated_models": 1,
         "graph": True,
@@ -56,7 +56,7 @@ SIMULATION_SETTINGS = [
     {
         "name": "Graph the comparison of two sophisticated models",
         "output": "list",
-        "condition": "projected",
+        "condition": "varied",
         "naive_models": 0,
         "sophisticated_models": 2,
         "graph": True,
@@ -64,7 +64,7 @@ SIMULATION_SETTINGS = [
     {
         "name": "Compare two naive models",
         "output": "final",
-        "condition": "projected",
+        "condition": "varied",
         "naive_models": 2,
         "sophisticated_models": 0,
         "graph": False,
@@ -72,7 +72,7 @@ SIMULATION_SETTINGS = [
     {
         "name": "Graph the population growth of a naive model",
         "output": "list",
-        "condition": "projected",
+        "condition": "varied",
         "naive_models": 1,
         "sophisticated_models": 0,
         "graph": True,
@@ -80,7 +80,7 @@ SIMULATION_SETTINGS = [
     {
         "name": "Graph the population growth of a sophisticated model",
         "output": "list",
-        "condition": "projected",
+        "condition": "varied",
         "naive_models": 0,
         "sophisticated_models": 1,
         "graph": True,
