@@ -357,11 +357,13 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
     # special conditions
     if condition == "population":
         if settings["naive_models"] > 0:
-            projection_time_unit = input("Enter a projected time unit for naive models:")
-        else:
-            projection_time_unit = fission_frequency.get_unit()
-    else:
-        projection_time_unit = None
+            projection_time_unit = time_amount_input(
+                min = 1,
+                max = 1,
+                prompt = "Enter the projection time unit for naive models: ",
+            )[1]
+        else: projection_time_unit = fission_frequency.get_unit()
+    else: projection_time_unit = None
     
     return models_data, projection_time, target_population, condition, projection_time_unit
 
