@@ -10,7 +10,6 @@ SIMULATION_SETTINGS = [
         "condition": "projected",
         "naive_models": 1,
         "sophisticated_models": 1,
-        "graph": False,
     },
     {
         "name": "Time for a sophisticated model to reach the target population",
@@ -18,7 +17,6 @@ SIMULATION_SETTINGS = [
         "condition": "population",
         "naive_models": 0,
         "sophisticated_models": 1,
-        "graph": False,
     },
     {
         "name": "Compare population models",
@@ -26,7 +24,6 @@ SIMULATION_SETTINGS = [
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "graph": False,
     },
     {
         "name": "Generate detailed projections formatted as columns",
@@ -34,7 +31,6 @@ SIMULATION_SETTINGS = [
         "condition": "varied",
         "naive_models": 0,
         "sophisticated_models": 1,
-        "graph": False,
     },
     {
         "name": "Model increases in fission-event frequency",
@@ -42,24 +38,14 @@ SIMULATION_SETTINGS = [
         "condition": "fission",
         "naive_models": 0,
         "sophisticated_models": 1,
-        "graph": False,
     },
     # Presets start here
     {
-        "name": "Graph the comparsion of a naive and sophisticated model",
-        "output": "list",
-        "condition": "varied",
-        "naive_models": 1,
-        "sophisticated_models": 1,
-        "graph": True,
-    },
-    {
-        "name": "Graph the comparison of two sophisticated models",
+        "name": "Compare two sophisticated models",
         "output": "list",
         "condition": "varied",
         "naive_models": 0,
         "sophisticated_models": 2,
-        "graph": True,
     },
     {
         "name": "Compare two naive models",
@@ -67,23 +53,13 @@ SIMULATION_SETTINGS = [
         "condition": "varied",
         "naive_models": 2,
         "sophisticated_models": 0,
-        "graph": False,
     },
     {
-        "name": "Graph the population growth of a naive model",
+        "name": "Population growth of a naive model",
         "output": "list",
         "condition": "varied",
         "naive_models": 1,
         "sophisticated_models": 0,
-        "graph": True,
-    },
-    {
-        "name": "Graph the population growth of a sophisticated model",
-        "output": "list",
-        "condition": "varied",
-        "naive_models": 0,
-        "sophisticated_models": 1,
-        "graph": True,
     },
 ]
 
@@ -128,7 +104,7 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
     rate.convert(projection_time_unit)
     rate.quantity /= 100
     if model_type == "naive":
-        time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity())
+        time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity()) # IMPORTANT no working
     elif model_type == "sophisticated":
         if fission_frequency.get_quantity() == 1:
             fission_frequency.convert(projection_time_unit)
@@ -268,6 +244,9 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}(s)\n")
             elif condition == "projected":
                 print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {final_population[i][-1]}\n")
+
+        if limited_input(prompt="Print Graph?") == "y":
+            pass # Print graph(s) here
     
     elif output_as == "list":
         for i in range(len(results)):
@@ -280,6 +259,9 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             elif condition == "projected":
                 print(f"Over Time for {model}: {result}")
                 print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {result[-1]}\n")
+        
+        if limited_input(prompt="Print Graph?") == "y":
+            pass # Print graph(s) here
     
     elif output_as == "final":
         for model, result in results.items():
@@ -415,11 +397,9 @@ if __name__ == "__main__":
             print_title("Presets")
             preset = listed_input(
                 choices = {
-                    "1": "Graph the comparsion of a naive and sophisticated model", 
-                    "2": "Graph the comparison of two sophisticated models",
-                    "3": "Compare two naive models", 
-                    "4": "Graph the population growth of a naive model",
-                    "5": "Graph the population growth of a sophisticated model",
+                    "1": "Compare two sophisticated models",
+                    "2": "Compare two naive models", 
+                    "3": "Population growth of a naive model",
                     "b": "Back"
                 },
                 prompt = "Select a preset:",
