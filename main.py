@@ -1,4 +1,5 @@
 from print_functions import *
+from math import log, ceil
 
 SECONDS_IN_UNIT = {"day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "second": 1}
 UNITS_ABBREVIATION = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "m", "second": "s"}
@@ -220,37 +221,34 @@ def calculate_models(calculate_data:list[list[list]]):
 def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, projected_time_unit:str, target_population:int|None, condition:str, output_as:str):
     calculation_data:list[list[list[str, int, TimeAmount, TimeAmount]]] = []
     time_needed = None
-    if condition == "population":
-        time_needed = TimeAmount(1, projected_time_unit) # IMPORTANT Calculate the projection time needed to exceed the target population
-        target_population # use this
 
-    if output_as == "final":
-        for i in range(len(models_data)):
-            calculation_data.append([]) # add a new model to the list
-            if condition == "projected": # if not 0 or None
+    for i in range(len(models_data)):
+        calculation_data.append([]) # add a new model to the list
+        projection_time_count = 0
+        if condition == "projected":
+            if output_as == "final":
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
-            elif condition == "population":
-                calculation_data[i].append(models_data[i] + [time_needed])
-    
-    if output_as == "list" or output_as == "columns":
-        for i in range(len(models_data)):
-            projection_time_count = 0
-            calculation_data.append([]) # add a new model to the list
-            if condition == "projected":
+            if output_as == "list" or output_as == "columns":
                 for _ in range(int(projection_time.get_quantity())):
                     projection_time_count += 1
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
-            elif condition == "population":
+        elif condition == "population":
+            # time_needed = (log(ceil(target_population)/1))
+            time_needed = TimeAmount(1, projected_time_unit) # IMPORTANT Calculate the projection time needed to exceed the target population
+
+            if output_as == "final":
+                calculation_data[i].append(models_data[i] + [time_needed])
+            elif output_as == "list" or output_as == "columns":
                 for _ in range(time_needed.get_quantity()):
                     projection_time_count += 1
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, time_needed.get_unit())])
-    
+        
     return calculation_data, time_needed
 
 def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], time_needed:TimeAmount, condition:str, output_as:str):
     print_title("Results")
     if output_as == "columns":
-        for i in range(len(results.keys())):
+        for i in range(len(results)):
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
             print_table(
                 data=[[n for n in range(len(opening_population[i]) + 1)], ([1000] + opening_population[i]), (["-"] + added_population[i]), (["-"] + final_population[i])],
@@ -264,7 +262,10 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {final_population[i][-1]}\n")
     
     elif output_as == "list":
-        for model, result in results.items():
+        for i in range(len(results)):
+            time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
+            model = list(results.keys())[i]
+            result = results[model]
             if condition == "population":
                 print(f"Forward Projection for {model}: {result}")
                 print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}(s)\n")
