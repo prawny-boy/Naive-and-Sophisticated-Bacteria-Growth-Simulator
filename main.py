@@ -107,23 +107,34 @@ class TimeAmount:
 # Functions
 def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
-    projection_time.convert(growth_rate.get_unit())
-    rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit())
+    rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
+    rate.convert(projection_time.get_unit())
     rate.quantity /= 100
-
     if model_type == "naive":
         return initial_population + (rate.get_quantity() * initial_population * projection_time.get_quantity())
-
     if model_type == "sophisticated":
         if fission_frequency.get_quantity() == 1:
-            fission_frequency.convert(rate.get_unit())
+            fission_frequency.convert(projection_time.get_unit())
             rate_over_fission = rate.get_quantity() * fission_frequency.get_quantity()
             total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
         else:
             rate_over_fission = rate.get_quantity() / fission_frequency.get_quantity()
             total_fission_events = projection_time.get_quantity() * fission_frequency.get_quantity()
-        
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
+
+def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, target_population: float, projection_time_unit: str) -> TimeAmount:
+    target_population_ratio = ceil(target_population) / initial_population
+    rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
+    rate.convert(projection_time_unit)
+    rate.quantity /= 100
+    if model_type == "naive":
+        time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity())
+    elif model_type == "sophisticated":
+        if fission_frequency.get_quantity() == 1:
+            fission_frequency.convert(projection_time_unit)
+        frequency = fission_frequency.get_quantity()
+        time_needed = log(target_population_ratio) / (frequency * log(1 + rate.get_quantity() / frequency))
+    return TimeAmount(ceil(time_needed), projection_time_unit)
 
 def input_custom_settings():
     print_title("Input Custom Settings")
@@ -219,7 +230,7 @@ def calculate_models(calculate_data:list[list[list]]):
     return (results, opening_population, added_population, final_population, model_configuration)
 
 def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, projected_time_unit:str, target_population:int|None, condition:str, output_as:str):
-    calculation_data:list[list[list[str, int, TimeAmount, TimeAmount]]] = []
+    calculation_data:list[list[list[str|int|TimeAmount]]] = []
     time_needed = None
 
     for i in range(len(models_data)):
@@ -229,20 +240,17 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
             if output_as == "list" or output_as == "columns":
-                for _ in range(int(projection_time.get_quantity())):
-                    projection_time_count += 1
+                for _ in range(projection_time.get_quantity() + 1):      
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
+                    projection_time_count += 1
         elif condition == "population":
-            # time_needed = (log(ceil(target_population)/1))
-            time_needed = TimeAmount(1, projected_time_unit) # IMPORTANT Calculate the projection time needed to exceed the target population
-
+            time_needed = calculate_time_to_reach_target(*models_data[i], target_population, projected_time_unit)
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [time_needed])
             elif output_as == "list" or output_as == "columns":
-                for _ in range(time_needed.get_quantity()):
-                    projection_time_count += 1
+                for _ in range(time_needed.get_quantity() + 1):
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, time_needed.get_unit())])
-        
+                    projection_time_count += 1
     return calculation_data, time_needed
 
 def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], time_needed:TimeAmount, condition:str, output_as:str):
@@ -251,7 +259,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
         for i in range(len(results)):
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
             print_table(
-                data=[[n for n in range(len(opening_population[i]) + 1)], ([1000] + opening_population[i]), (["-"] + added_population[i]), (["-"] + final_population[i])],
+                data=[[n for n in range(len(opening_population[i]))], opening_population[i], added_population[i], final_population[i]],
                 table_length=len(opening_population[i]) + 1,
                 table_title=list(results.keys())[i],
                 titles=[f"Time (in {time_amount_of_condition.get_unit()}s)", "Opening", "Added", "Final"],
