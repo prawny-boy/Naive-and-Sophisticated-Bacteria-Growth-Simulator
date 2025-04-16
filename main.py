@@ -84,7 +84,6 @@ SIMULATION_SETTINGS = [
         "sophisticated_models": 1,
         "graph": True,
     },
-
 ]
 
 class TimeAmount:
@@ -156,8 +155,8 @@ def input_custom_settings():
 
 def summary(models_data, projection_time:TimeAmount, target_population:TimeAmount, condition:str):
     print_title("Summary")
-    naive_model_count = 0
-    sophisticated_model_count = 0
+    naive_model_count = 1
+    sophisticated_model_count = 1
     for model in models_data:
         model_type = model[0]
         if model_type == "naive":
