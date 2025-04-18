@@ -1,5 +1,7 @@
 from print_functions import *
 from math import log, ceil
+import matplotlib.pyplot as plt
+import numpy as np
 
 SECONDS_IN_UNIT = {"day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "second": 1}
 UNITS_ABBREVIATION = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "m", "second": "s"}
@@ -111,6 +113,13 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
         frequency = fission_frequency.get_quantity()
         time_needed = log(target_population_ratio) / (frequency * log(1 + rate.get_quantity() / frequency))
     return TimeAmount(ceil(time_needed), projection_time_unit)
+
+def show_graph(x_values:list, y_values:list, graph_type:str = "line"):
+    x = np.array(x_values)
+    y = np.array(y_values)
+    if graph_type == "line": plt.plot(x, y)
+    elif graph_type == "bar": plt.bar(x, y)
+    plt.show()
 
 def input_custom_settings():
     print_title("Input Custom Settings")
