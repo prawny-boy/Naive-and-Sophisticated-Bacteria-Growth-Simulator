@@ -114,12 +114,17 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
         time_needed = log(target_population_ratio) / (frequency * log(1 + rate.get_quantity() / frequency))
     return TimeAmount(ceil(time_needed), projection_time_unit)
 
-def show_graph(x_values:list, y_values:list, graph_type:str = "line"):
-    x = np.array(x_values)
-    y = np.array(y_values)
-    if graph_type == "line": plt.plot(x, y)
-    elif graph_type == "bar": plt.bar(x, y)
+def show_graph(x_values:list[list], y_values:list[list], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", graph_type:str = "line"):
+    for i in range(len(x_values)):
+        x = np.array(x_values[i])
+        y = np.array(y_values[i])
+        if graph_type == "line": plt.plot(x, y)
+        elif graph_type == "bar": plt.bar(x, y)
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
     plt.show()
+    cprint("Opened Graph. Close the graph to continue...\n", color="grey", attrs=["dark"])
 
 def input_custom_settings():
     print_title("Input Custom Settings")
@@ -270,7 +275,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {result[-1]}\n")
         
         if limited_input(prompt="Print Graph?") == "y":
-            pass # Print graph(s) here
+            show_graph([[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))], list(results.values()))
     
     elif output_as == "final":
         for model, result in results.items():

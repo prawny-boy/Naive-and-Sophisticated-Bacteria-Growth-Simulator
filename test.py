@@ -44,3 +44,13 @@ def test (a, b, c):
 
 l = [12, 12, 14]
 test(*l)
+import matplotlib.pyplot as plt
+import numpy as np
+def show_graph(x_values:list[list], y_values:list[list], graph_type:str = "line"):
+    for i in range(len(x_values)):
+        x = np.array(x_values[i])
+        y = np.array(y_values[i])
+        if graph_type == "line": plt.plot(x, y)
+        elif graph_type == "bar": plt.bar(x, y)
+    plt.show()
+show_graph([[1, 2, 3], [1, 2, 3]], [[1, 2, 3], [1, 2, 3]], "line")
