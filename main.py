@@ -76,6 +76,12 @@ class TimeAmount:
         self.unit = to_unit
         return converted
     
+    def scale(self, to_unit: str):
+        converted = (SECONDS_IN_UNIT[to_unit.lower()] / SECONDS_IN_UNIT[self.unit.lower()]) * self.quantity
+        self.quantity = converted
+        self.unit = to_unit
+        return converted
+
     def get_quantity(self):
         return self.quantity
     
@@ -86,7 +92,7 @@ class TimeAmount:
 def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
-    rate.convert(projection_time.get_unit())
+    rate.scale(projection_time.get_unit())
     rate.quantity /= 100
     if model_type == "naive":
         return initial_population + (rate.get_quantity() * initial_population * projection_time.get_quantity())
@@ -103,7 +109,7 @@ def calculate_population_size(model_type: str, initial_population: float, growth
 def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, target_population: float, projection_time_unit: str) -> TimeAmount:
     target_population_ratio = ceil(target_population) / initial_population
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
-    rate.convert(projection_time_unit)
+    rate.scale(projection_time_unit)
     rate.quantity /= 100
     if model_type == "naive":
         time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity()) # IMPORTANT no working
