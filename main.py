@@ -65,6 +65,9 @@ SIMULATION_SETTINGS = [
     },
 ]
 
+rounding_amount = 2
+projected_time_output_type = "rate"
+
 class TimeAmount:
     def __init__(self, quantity:float, unit:str):
         self.quantity = quantity
@@ -120,15 +123,17 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
         time_needed = log(target_population_ratio) / (frequency * log(1 + rate.get_quantity() / frequency))
     return TimeAmount(ceil(time_needed), projection_time_unit)
 
-def show_graph(x_values:list[list], y_values:list[list], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", graph_type:str = "line"):
-    for i in range(len(x_values)):
-        x = np.array(x_values[i])
-        y = np.array(y_values[i])
-        if graph_type == "line": plt.plot(x, y)
-        elif graph_type == "bar": plt.bar(x, y)
+def show_graph(x_values:list[list[list]], y_values:list[list[list]], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", line_labels:list[str] = ["Final"], graph_type:str = "line"):
+    for line in range(len(x_values)):
+        for i in range(len(x_values[line])):
+            x = np.array(x_values[line][i])
+            y = np.array(y_values[line][i])
+            if graph_type == "line": plt.plot(x, y, label=line_labels[line])
+            elif graph_type == "bar": plt.bar(x, y)
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
+    plt.legend(loc='best')
     plt.show()
     cprint("Opened Graph. Close the graph to continue...\n", color="grey", attrs=["dark"])
 
@@ -214,7 +219,7 @@ def calculate_models(calculate_data:list[list[list]]):
         for calculation in calculate_data[i]:
             if last_population == 0:
                 last_population = calculation[1]
-            model_result = calculate_population_size(*calculation[:5])
+            model_result = round(calculate_population_size(*calculation[:5]), rounding_amount)
             results[model_name].append(model_result) # add the result to the dictionary of results
 
             opening_population[i].append(round(last_population, 2))
@@ -266,7 +271,12 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {final_population[i][-1]}\n")
 
         if limited_input(prompt="Print Graph?") == "y":
-            pass # Print graph(s) here
+            show_graph(
+                x_values = [[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]] * 3, 
+                y_values=[opening_population, added_population, final_population],
+                x_label=f"Time (in {time_amount_of_condition.get_unit()}s)",
+                line_labels=["Opening", "Added", "Final"]
+            )
     
     elif output_as == "list":
         for i in range(len(results)):
@@ -281,7 +291,11 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {result[-1]}\n")
         
         if limited_input(prompt="Print Graph?") == "y":
-            show_graph([[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))], list(results.values()))
+            show_graph(
+                x_values=[[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]], 
+                y_values=[list(results.values())],
+                x_label=f"Time (in {time_amount_of_condition.get_unit()}s)"
+            )
     
     elif output_as == "final":
         for model, result in results.items():
@@ -406,6 +420,7 @@ if __name__ == "__main__":
                 "5": "Model increases in fission-event frequency (Unfinished)",
                 "0": "Custom Simulation Settings (Sandbox)",
                 "p": "Run Presets for Simulations",
+                "s": "Settings",
                 "h": "Help"
             },
             prompt = "Main Menu",
@@ -428,6 +443,36 @@ if __name__ == "__main__":
             if preset == "b":
                 continue
             run_module(int(preset) + 5)
+        elif command == "s":
+            change_setting = listed_input(
+                choices = {
+                    "r": "Number of decimals for rounding",
+                    "t": "Projected time output type",
+                    "b": "Back"
+                },
+                prompt = "Select a setting to change:",
+                return_key=True,
+            )
+            if change_setting == "b":
+                continue
+            elif change_setting == "r":
+                rounding_amount = ranged_input(
+                    min = 0,
+                    max = 10,
+                    prompt = f"Enter the number of decimals for rounding: (Current: {rounding_amount}) ",
+                )
+            elif change_setting == "t":
+                output_type = listed_input(
+                    choices = {
+                        "f": "Fission Events",
+                        "g": "Growth Rate Time Unit (User Friendly)",
+                    },
+                    prompt=f"Enter the projected time output type: (Current: {projected_time_output_type}) ",
+                )
+                if output_type == "f":
+                    projected_time_output_type = "fission"
+                elif output_type == "g":
+                    projected_time_output_type = "rate"
         elif command == "h":
             print_title("Help")
             print("""This is a population modelling simulator for bacteria. \nIt simulates the growth of bacteria using naive (linear) and sophisticated (exponential) models.

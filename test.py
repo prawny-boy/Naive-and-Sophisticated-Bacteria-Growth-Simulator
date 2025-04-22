@@ -54,3 +54,28 @@ def show_graph(x_values:list[list], y_values:list[list], graph_type:str = "line"
         elif graph_type == "bar": plt.bar(x, y)
     plt.show()
 show_graph([[1, 2, 3], [1, 2, 3]], [[1, 2, 3], [1, 2, 3]], "line")
+
+import matplotlib.pyplot as plt
+
+# Data points
+x = [1, 2, 3, 4]
+y1 = [2, 4, 1, 3]
+y2 = [5, 3, 4, 2]
+
+# Create figure to avoid overlap issues
+plt.figure(figsize=(8, 5))
+
+# Plot the lines with labels
+plt.plot(x, y1, label='Line 1', marker='o', linestyle='-')
+plt.plot(x, y2, label='Line 2', marker='s', linestyle='--')
+
+# Label axes and title
+plt.xlabel('X-axis')
+plt.ylabel('Y-axis')
+plt.title('Plot with Line Labels')
+
+# Ensure the legend is properly displayed
+plt.legend(loc='best')
+
+# Show the plot
+plt.show()
