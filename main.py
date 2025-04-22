@@ -289,11 +289,12 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
             model = list(results.keys())[i]
             result = results[model]
+            printing_results_list = ", ".join([str(i) for i in result])
             if condition == "population":
-                print(f"Forward Projection for {model}: {result}")
+                print(f"Forward Projection for {model}: {printing_results_list}")
                 print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
-                print(f"Over Time for {model}: {result}")
+                print(f"Over Time for {model}: {printing_results_list}")
                 print(f"Final Population after {time_amount_of_condition}: {result[-1]}\n")
         
         if limited_input(prompt="Print Graph?") == "y":
