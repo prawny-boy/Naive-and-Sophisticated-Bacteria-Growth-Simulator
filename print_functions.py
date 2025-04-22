@@ -73,7 +73,7 @@ def print_table(data: list[list], table_length: int, table_title: str = "RESULTS
         print("")
     print("")
 
-def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", infinite_end:bool = False, avaliable_units:dict = {"day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "m", "second": "s"}, special:list = ["custom"]) -> list[int|str]:
+def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", infinite_end:bool = False, avaliable_units:dict = {"year": "y", "half-year": "hy", "quarter-year": "qy", "month": "m", "week": "w", "day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "min", "second": "s"}, special:list = ["custom"]) -> list[int|str]:
     if infinite_end:
         max = "∞"
     cprint(prompt, "yellow", attrs=["bold"])
