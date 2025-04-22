@@ -73,6 +73,12 @@ class TimeAmount:
         self.quantity = quantity
         self.unit = unit
     
+    def __str__(self):
+        if self.quantity == 1:
+            return f"{self.quantity} {self.unit}"
+        else:
+            return f"{self.quantity} {self.unit}s"
+    
     def convert(self, to_unit: str):
         converted = (SECONDS_IN_UNIT[self.unit.lower()] / SECONDS_IN_UNIT[to_unit.lower()]) * self.quantity
         self.quantity = converted
@@ -188,7 +194,7 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
         print(f", Fission Event Frequency: {fission_frequency.get_quantity()} per {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
 
         if condition == "projected":
-            print(f"Projected Timeframe: {projection_time.get_quantity()} {projection_time.get_unit()}(s)")
+            print(f"Projected Timeframe: {projection_time}")
         if condition == "population":
             print(f"Target Population: {target_population}")
 
@@ -266,9 +272,9 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 titles=[f"Time (in {time_amount_of_condition.get_unit()}s)", "Opening", "Added", "Final"],
             )
             if condition == "population":
-                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}(s)\n")
+                print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
-                print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {final_population[i][-1]}\n")
+                print(f"Final Population after {time_amount_of_condition}: {final_population[i][-1]}\n")
 
         if limited_input(prompt="Print Graph?") == "y":
             show_graph(
@@ -285,10 +291,10 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             result = results[model]
             if condition == "population":
                 print(f"Forward Projection for {model}: {result}")
-                print(f"Time taken to reach population: {time_needed.get_quantity()} {time_needed.get_unit()}(s)\n")
+                print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
                 print(f"Over Time for {model}: {result}")
-                print(f"Final Population after {time_amount_of_condition.get_quantity()} {time_amount_of_condition.get_unit()}(s): {result[-1]}\n")
+                print(f"Final Population after {time_amount_of_condition}: {result[-1]}\n")
         
         if limited_input(prompt="Print Graph?") == "y":
             show_graph(
