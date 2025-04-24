@@ -79,3 +79,17 @@ plt.legend(loc='best')
 
 # Show the plot
 plt.show()
+
+def myfunction(a, b): # this defines a function. a and b are parameters (what you feed to the function to do stuff for you)
+    c = a + b
+    d = a - b
+    return c, d # this returns c and d
+
+c, d = myfunction(1, 2) # this will set c to 3 as 1 + 2 = 3. This will also set d to -1 as 1 - 2 = -1
+print(c) # this will print 3
+print(d) # this will print -1
+
+def naive_model_calculation(population, blah, stuff):
+    return blah # do calculations
+
+blah = naive_model_calculation(1, 2, 3)

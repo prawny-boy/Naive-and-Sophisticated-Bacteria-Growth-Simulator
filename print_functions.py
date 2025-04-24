@@ -98,7 +98,7 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
                 unit = user_input[0]
                 if user_input[0] in avaliable_units.values():
                     unit = list(avaliable_units.keys())[list(avaliable_units.values()).index(unit)]
-                amount = 1
+                amount = 1.0
                 if (not infinite_end and min <= 1 <= max) or (infinite_end and 1 >= min):
                     if unit not in special:
                         cprint(f"Selected {amount} {unit}(s)", "green")
@@ -112,12 +112,12 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
                 print("Invalid. Enter in format 'number<space>unit'.")
             continue
         amount = user_input[0]
-        if amount.isnumeric():
-            amount = int(amount)
+        try:
+            amount = float(amount)
             if amount < min or (not infinite_end and amount > max):
                 print(f"Invalid. Enter a number between {min} and {max}.")
                 continue
-        else:
+        except ValueError:
             print("Invalid. First value must be a number.")
             continue
         unit = user_input[1]
