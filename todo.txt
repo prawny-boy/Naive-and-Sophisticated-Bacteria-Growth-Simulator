@@ -1,3 +1,7 @@
-optimise the fission events to convert when it is inputted
-implement the projected time output type setting
+optimise the fission events to convert when it is inputted and summarise as total fission events or 1 of a unit
+implement the projected time output type setting (do after fixing time needed and optimising of fission events)
 implement module 5
+add plural checking in time amount input
+time needed has to be seperate for each module as sandbox causing big errors
+change the labels of lines in a graph to print the model its representing as it just says final, added, start on it (can also do subplots and have one graph for one model)
+graphing error when doing calculating time for reaching population with 2 models at the same time (check if fixed after doing time needed issue)

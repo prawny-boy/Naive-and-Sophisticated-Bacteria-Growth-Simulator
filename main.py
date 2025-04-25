@@ -66,7 +66,7 @@ SIMULATION_SETTINGS = [
 ]
 
 rounding_amount = 2
-projected_time_output_type = "rate"
+projected_time_output_type = "mix"
 
 class TimeAmount:
     def __init__(self, quantity:float, unit:str):
@@ -262,6 +262,15 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
 
 def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], time_needed:TimeAmount, condition:str, output_as:str):
     print_title("Results")
+    # if condition == "population":
+    #     if projected_time_output_type == "mix":
+    #         time_needed = time_needed.convert()
+    #         time_needed = f"{time_needed} and {fission_events} fission events"
+    #     elif projected_time_output_type == "fission":
+    #         fission_events = time_needed.get_quantity()
+    #         time_needed = f"{time_needed} fission events"
+    #     elif projected_time_output_type == "rate":
+    #         time_needed.convert()
     if output_as == "columns":
         for i in range(len(results)):
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
@@ -300,7 +309,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
         if limited_input(prompt="Print Graph?") == "y":
             show_graph(
                 x_values=[[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]], 
-                y_values=[list(results.values())],
+                y_values=[list(results.values())], # only has a few, x has too many values (list too long)
                 x_label=f"Time (in {time_amount_of_condition.get_unit()}s)"
             )
     
@@ -408,7 +417,7 @@ def run_module(module_number: int):
     calculation_data, time_needed = compile_data(models_data, projection_time, projection_time_unit, target_population, condition, output_as)
 
     # CALCULATE & PRINT RESULTS
-    print_results(*calculate_models(calculation_data), time_needed, condition, output_as)
+    print_results(*calculate_models(calculation_data), time_needed, condition, output_as) # no need for time needed can just check the amount of calculations and find fission event unit
 
 if __name__ == "__main__":
     print("-------------------------------------------------------------------")
@@ -472,7 +481,8 @@ if __name__ == "__main__":
                 output_type = listed_input(
                     choices = {
                         "f": "Fission Events",
-                        "g": "Growth Rate Time Unit (User Friendly)",
+                        "g": "Growth Rate Time Unit",
+                        "m": "Mix (User Friendly)"
                     },
                     prompt=f"Enter the projected time output type: (Current: {projected_time_output_type}) ",
                 )
@@ -480,6 +490,8 @@ if __name__ == "__main__":
                     projected_time_output_type = "fission"
                 elif output_type == "g":
                     projected_time_output_type = "rate"
+                elif output_type == "m":
+                    projected_time_output_type = "mix"
         elif command == "h":
             print_title("Help")
             print("""This is a population modelling simulator for bacteria. \nIt simulates the growth of bacteria using naive (linear) and sophisticated (exponential) models.
