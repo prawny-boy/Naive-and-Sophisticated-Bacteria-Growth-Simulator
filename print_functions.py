@@ -73,12 +73,12 @@ def print_table(data: list[list], table_length: int, table_title: str = "RESULTS
         print("")
     print("")
 
-def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", infinite_end:bool = False, avaliable_units:dict = {"year": "y", "half-year": "hy", "quarter-year": "qy", "month": "m", "week": "w", "day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "min", "second": "s"}, special:list = ["custom"]) -> list[int|str]:
+def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", allow_float:bool = True, infinite_end:bool = False, avaliable_units:dict = {"year": "y", "half-year": "hy", "quarter-year": "qy", "month": "m", "week": "w", "day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "min", "second": "s"}, special:list = ["custom"]) -> list[int|float|str]:
     if infinite_end:
         max = "∞"
     cprint(prompt, "yellow", attrs=["bold"])
     while True:
-        if min == max and not infinite_end:
+        if min == max:
             user_input = input(f"Enter a unit: ").lower().split()
         else:
             user_input = input(f"Enter a number ({min}-{max}) and an unit: ").lower().split()
@@ -112,6 +112,10 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
                 print("Invalid. Enter in format 'number<space>unit'.")
             continue
         amount = user_input[0]
+        if not allow_float:
+            if not amount.isnumeric():
+                print("Invalid. First value must be a integer.")
+                continue
         try:
             amount = float(amount)
             if amount < min or (not infinite_end and amount > max):
@@ -120,6 +124,8 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", in
         except ValueError:
             print("Invalid. First value must be a number.")
             continue
+        if not allow_float:
+            amount = int(amount)
         unit = user_input[1]
         if unit not in list(avaliable_units.keys()):
             if unit in avaliable_units.values():

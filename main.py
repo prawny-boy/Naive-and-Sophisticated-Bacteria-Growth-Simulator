@@ -115,19 +115,19 @@ def calculate_population_size(model_type: str, initial_population: float, growth
             total_fission_events = projection_time.get_quantity() * fission_frequency.get_quantity()
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
-def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, target_population: float, projection_time_unit: str) -> TimeAmount:
+def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, target_population: float, output_unit: str) -> TimeAmount:
     target_population_ratio = ceil(target_population) / initial_population
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
-    rate.scale(projection_time_unit)
+    rate.scale(output_unit) 
     rate.quantity /= 100
     if model_type == "naive":
         time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity()) # IMPORTANT no working
     elif model_type == "sophisticated":
         if fission_frequency.get_quantity() == 1:
-            fission_frequency.convert(projection_time_unit)
+            fission_frequency.convert(output_unit)
         frequency = fission_frequency.get_quantity()
         time_needed = log(target_population_ratio) / (frequency * log(1 + rate.get_quantity() / frequency))
-    return TimeAmount(ceil(time_needed), projection_time_unit)
+    return TimeAmount(ceil(time_needed), output_unit)
 
 def show_graph(x_values:list[list[list]], y_values:list[list[list]], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", line_labels:list[str] = ["Final"], graph_type:str = "line"):
     for line in range(len(x_values)):
@@ -228,17 +228,16 @@ def calculate_models(calculate_data:list[list[list]]):
             model_result = round(calculate_population_size(*calculation[:5]), rounding_amount)
             results[model_name].append(model_result) # add the result to the dictionary of results
 
-            opening_population[i].append(round(last_population, 2))
-            added_population[i].append(round(model_result - last_population, 2))
-            final_population[i].append(round(model_result, 2))
+            opening_population[i].append(last_population)
+            added_population[i].append(round(model_result - last_population, rounding_amount))
+            final_population[i].append(model_result)
 
             last_population = model_result
     
     return (results, opening_population, added_population, final_population, model_configuration)
 
-def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, projected_time_unit:str, target_population:int|None, condition:str, output_as:str):
+def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, target_population:int|None, condition:str, output_as:str):
     calculation_data:list[list[list[str|int|TimeAmount]]] = []
-    time_needed = None
 
     for i in range(len(models_data)):
         calculation_data.append([]) # add a new model to the list
@@ -251,26 +250,17 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
                     projection_time_count += 1
         elif condition == "population":
-            time_needed = calculate_time_to_reach_target(*models_data[i], target_population, projected_time_unit)
+            time_needed = calculate_time_to_reach_target(*models_data[i], target_population, models_data[i][2].get_unit()) # models_data[i][2] is the growth rate 
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [time_needed])
             elif output_as == "list" or output_as == "columns":
                 for _ in range(time_needed.get_quantity() + 1):
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, time_needed.get_unit())])
                     projection_time_count += 1
-    return calculation_data, time_needed
+    return calculation_data
 
-def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], time_needed:TimeAmount, condition:str, output_as:str):
+def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], condition:str, output_as:str):
     print_title("Results")
-    # if condition == "population":
-    #     if projected_time_output_type == "mix":
-    #         time_needed = time_needed.convert()
-    #         time_needed = f"{time_needed} and {fission_events} fission events"
-    #     elif projected_time_output_type == "fission":
-    #         fission_events = time_needed.get_quantity()
-    #         time_needed = f"{time_needed} fission events"
-    #     elif projected_time_output_type == "rate":
-    #         time_needed.convert()
     if output_as == "columns":
         for i in range(len(results)):
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
@@ -281,6 +271,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 titles=[f"Time (in {time_amount_of_condition.get_unit()}s)", "Opening", "Added", "Final"],
             )
             if condition == "population":
+                time_needed = None # IMPORTANT change this to the time needed to reach the target population in right units
                 print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
                 print(f"Final Population after {time_amount_of_condition}: {final_population[i][-1]}\n")
@@ -300,6 +291,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             result = results[model]
             printing_results_list = ", ".join([str(i) for i in result])
             if condition == "population":
+                time_needed = None # IMPORTANT change this to the time needed to reach the target population in right units
                 print(f"Forward Projection for {model}: {printing_results_list}")
                 print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
@@ -309,7 +301,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
         if limited_input(prompt="Print Graph?") == "y":
             show_graph(
                 x_values=[[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]], 
-                y_values=[list(results.values())], # only has a few, x has too many values (list too long)
+                y_values=[list(results.values())], # IMPORTANT only has a few, x has too many values (list too long)
                 x_label=f"Time (in {time_amount_of_condition.get_unit()}s)"
             )
     
@@ -327,7 +319,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
             max = 100,
             prompt = "Enter the growth rate % (7% = 7): ",
         ))
-        models_data.append(["naive"] + [initial_population, growth_rate] + [None])
+        models_data.append(["naive"] + [initial_population, growth_rate, None])
     for i in range(settings["sophisticated_models"]):
         print_title(f"Sophisticated Model {i + 1}")
         initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
@@ -357,47 +349,42 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
     # Get projection time or target population
     target_population = None
     projection_time = None
-    condition = None
+    condition = settings["condition"]
 
-    if settings["condition"] == "population":
+    if condition == "varied":
+        print_title("Condition Type")
+        condition = listed_input(
+            choices = {"population": "Target Population", 
+                       "projected": "Projected Time"},
+            prompt = "Select the condition type:",
+            return_key=True,
+        )
+
+    if condition == "population":
         print_title("Target Population")
-        target_population = ranged_input(1, None, "Enter the target population: ", infinite_end=True)
-        condition = "population"
-    elif settings["condition"] == "varied":
-        print_title("Target Population")
-        target_population = ranged_input(0, None, f"Enter the target population (Enter 0 for stopping at a projected time): ", infinite_end=True)
-        if target_population == 0:
-            condition = "projected"
-            print_title("Projection Timeframe")
-            projection_time = TimeAmount(*time_amount_input(
-                min = 1,
-                max = None,
-                prompt = "Enter the projection time: ",
-                infinite_end=True,
-            ))
-        else: condition = "population"
-    elif settings["condition"] == "projected":
+        target_population = ranged_input(1, None, "Enter the target population for all models: ", infinite_end=True)
+    elif condition == "projected":
         print_title("Projection Timeframe")
         projection_time = TimeAmount(*time_amount_input(
             min = 1,
             max = None,
-            prompt = "Enter the projection time: ",
+            prompt = "Enter the projection timeframe for all models: ",
             infinite_end=True,
+            allow_float=False
         ))
-        condition = "projected"
     
-    # special conditions
-    if condition == "population":
-        if settings["naive_models"] > 0:
-            projection_time_unit = time_amount_input(
-                min = 1,
-                max = 1,
-                prompt = "Enter the projection time unit for naive models: ",
-            )[1]
-        else: projection_time_unit = fission_frequency.get_unit()
-    else: projection_time_unit = None
+    # # special conditions
+    # if condition == "population":
+    #     if settings["naive_models"] > 0:
+    #         projection_time_unit = time_amount_input(
+    #             min = 1,
+    #             max = 1,
+    #             prompt = "Enter the projection time unit for naive models: ",
+    #         )[1]
+    #     else: projection_time_unit = fission_frequency.get_unit()
+    # else: projection_time_unit = None
     
-    return models_data, projection_time, target_population, condition, projection_time_unit
+    return models_data, projection_time, target_population, condition
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -407,17 +394,17 @@ def run_module(module_number: int):
         settings = SIMULATION_SETTINGS[module_number - 1]
     print_header(f"Simulation {module_number}: {settings['name']}")
     
-    models_data, projection_time, target_population, condition, projection_time_unit = run_inputs(settings)
+    models_data, projection_time, target_population, condition = run_inputs(settings)
 
     # SUMMARY
     summary(models_data, projection_time, target_population, condition)
     
     # COMPILE DATA FOR CACULATION
     output_as = settings["output"]
-    calculation_data, time_needed = compile_data(models_data, projection_time, projection_time_unit, target_population, condition, output_as)
+    calculation_data = compile_data(models_data, projection_time, target_population, condition, output_as)
 
     # CALCULATE & PRINT RESULTS
-    print_results(*calculate_models(calculation_data), time_needed, condition, output_as) # no need for time needed can just check the amount of calculations and find fission event unit
+    print_results(*calculate_models(calculation_data), condition, output_as)
 
 if __name__ == "__main__":
     print("-------------------------------------------------------------------")
