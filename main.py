@@ -65,8 +65,8 @@ SIMULATION_SETTINGS = [
     },
 ]
 
+# Settings
 rounding_amount = 2
-projected_time_output_type = "mix"
 
 class TimeAmount:
     def __init__(self, quantity:float, unit:str):
@@ -98,7 +98,7 @@ class TimeAmount:
         return self.unit
 
 # Functions
-def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, projection_time: TimeAmount) -> float:
+def calculate_population_size(model_type: str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, projection_time: TimeAmount) -> float:
     initial_population = float(initial_population)
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
     rate.scale(projection_time.get_unit())
@@ -106,16 +106,11 @@ def calculate_population_size(model_type: str, initial_population: float, growth
     if model_type == "naive":
         return initial_population + (rate.get_quantity() * initial_population * projection_time.get_quantity())
     if model_type == "sophisticated":
-        if fission_frequency.get_quantity() == 1:
-            fission_frequency.convert(projection_time.get_unit())
-            rate_over_fission = rate.get_quantity() * fission_frequency.get_quantity()
-            total_fission_events = projection_time.get_quantity() / fission_frequency.get_quantity()
-        else:
-            rate_over_fission = rate.get_quantity() / fission_frequency.get_quantity()
-            total_fission_events = projection_time.get_quantity() * fission_frequency.get_quantity()
+        rate_over_fission = rate.get_quantity() / fission_frequency
+        total_fission_events = projection_time.get_quantity() * fission_frequency
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
-def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: TimeAmount, target_population: float, output_unit: str) -> TimeAmount:
+def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, target_population: float, output_unit: str) -> TimeAmount:
     target_population_ratio = ceil(target_population) / initial_population
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
     rate.scale(output_unit) 
@@ -123,10 +118,7 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
     if model_type == "naive":
         time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity()) # IMPORTANT no working
     elif model_type == "sophisticated":
-        if fission_frequency.get_quantity() == 1:
-            fission_frequency.convert(output_unit)
-        frequency = fission_frequency.get_quantity()
-        time_needed = log(target_population_ratio) / (frequency * log(1 + rate.get_quantity() / frequency))
+        time_needed = log(target_population_ratio) / (fission_frequency * log(1 + rate.get_quantity() / fission_frequency))
     return TimeAmount(ceil(time_needed), output_unit)
 
 def show_graph(x_values:list[list[list]], y_values:list[list[list]], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", line_labels:list[str] = ["Final"], graph_type:str = "line"):
@@ -176,6 +168,7 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
     print_title("Summary")
     naive_model_count = 1
     sophisticated_model_count = 1
+    model:list[str|int|TimeAmount]
     for model in models_data:
         model_type = model[0]
         if model_type == "naive":
@@ -187,11 +180,11 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
         model_population:int = model[1]
         model_growth_rate:int = model[2].get_quantity()
         model_growth_unit:str = model[2].get_unit()
-        fission_frequency:TimeAmount = model[3] if len(model) > 3 else None
+        fission_frequency:TimeAmount = model[3]
 
         print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end="")
 
-        print(f", Fission Event Frequency: {fission_frequency.get_quantity()} per {fission_frequency.get_unit()}") if model_type == "sophisticated" else print("")
+        print(f", Fission Event Frequency: {fission_frequency}" if model_type == "sophisticated" else print(""))
 
         if condition == "projected":
             print(f"Projected Timeframe: {projection_time}")
@@ -243,6 +236,9 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
         calculation_data.append([]) # add a new model to the list
         projection_time_count = 0
         if condition == "projected":
+            if models_data[i][0] == "sophisticated": # models_data[i][3] is the fission frequency convert before calculations
+                if type(models_data[i][3]) == str: # if the fission frequency is a string
+                    models_data[i][3] = SECONDS_IN_UNIT[models_data[i][2].get_unit()] / SECONDS_IN_UNIT[models_data[i][3]] # models_data[i][2] is the growth rate
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
             if output_as == "list" or output_as == "columns":
@@ -250,7 +246,7 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
                     projection_time_count += 1
         elif condition == "population":
-            time_needed = calculate_time_to_reach_target(*models_data[i], target_population, models_data[i][2].get_unit()) # models_data[i][2] is the growth rate 
+            time_needed:TimeAmount = calculate_time_to_reach_target(*models_data[i], target_population, models_data[i][2].get_unit()) # models_data[i][2] is the growth rate 
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [time_needed])
             elif output_as == "list" or output_as == "columns":
@@ -291,7 +287,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             result = results[model]
             printing_results_list = ", ".join([str(i) for i in result])
             if condition == "population":
-                time_needed = None # IMPORTANT change this to the time needed to reach the target population in right units
+                time_needed = None # IMPORTANT change this to the time needed to reach the target population in right units (currently in growth rate units)
                 print(f"Forward Projection for {model}: {printing_results_list}")
                 print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
@@ -342,8 +338,10 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
                 prompt="Enter the number of fission-events per growth rate unit: ",
                 infinite_end=True
             )
-            fission_frequency = TimeAmount(fission_frequency, growth_rate.get_unit())
-        else: fission_frequency = TimeAmount(*fission_frequency)
+            fission_frequency_unit = None
+        else: 
+            fission_frequency_unit = fission_frequency[1]
+            fission_frequency = fission_frequency[1] # returns as total fission events unit
         models_data.append(["sophisticated"] + [initial_population, growth_rate, fission_frequency])
 
     # Get projection time or target population
@@ -372,17 +370,6 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
             infinite_end=True,
             allow_float=False
         ))
-    
-    # # special conditions
-    # if condition == "population":
-    #     if settings["naive_models"] > 0:
-    #         projection_time_unit = time_amount_input(
-    #             min = 1,
-    #             max = 1,
-    #             prompt = "Enter the projection time unit for naive models: ",
-    #         )[1]
-    #     else: projection_time_unit = fission_frequency.get_unit()
-    # else: projection_time_unit = None
     
     return models_data, projection_time, target_population, condition
 
@@ -450,7 +437,6 @@ if __name__ == "__main__":
             change_setting = listed_input(
                 choices = {
                     "r": "Number of decimals for rounding",
-                    "t": "Projected time output type",
                     "b": "Back"
                 },
                 prompt = "Select a setting to change:",
@@ -464,21 +450,6 @@ if __name__ == "__main__":
                     max = 10,
                     prompt = f"Enter the number of decimals for rounding: (Current: {rounding_amount}) ",
                 )
-            elif change_setting == "t":
-                output_type = listed_input(
-                    choices = {
-                        "f": "Fission Events",
-                        "g": "Growth Rate Time Unit",
-                        "m": "Mix (User Friendly)"
-                    },
-                    prompt=f"Enter the projected time output type: (Current: {projected_time_output_type}) ",
-                )
-                if output_type == "f":
-                    projected_time_output_type = "fission"
-                elif output_type == "g":
-                    projected_time_output_type = "rate"
-                elif output_type == "m":
-                    projected_time_output_type = "mix"
         elif command == "h":
             print_title("Help")
             print("""This is a population modelling simulator for bacteria. \nIt simulates the growth of bacteria using naive (linear) and sophisticated (exponential) models.
