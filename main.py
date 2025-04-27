@@ -185,8 +185,8 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
         fission_frequency:TimeAmount = model[3]
 
         print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end="")
-
-        print(f", Fission Event Frequency: {fission_frequency}" if model_type == "sophisticated" else print(""))
+        
+        print(f", Fission Event Frequency: {fission_frequency}") if model_type == "sophisticated" else print("")
 
         if condition == "projected":
             print(f"Projected Timeframe: {projection_time}")
