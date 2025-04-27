@@ -102,7 +102,10 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", al
                 amount = 1.0
                 if (not infinite_end and min <= 1 <= max) or (infinite_end and 1 >= min):
                     if unit not in special:
-                        cprint(f"Selected {amount} {unit}(s)", "green")
+                        if amount == 1:
+                            cprint(f"Selected {unit}", "green")
+                        else:
+                            cprint(f"Selected {amount} {unit}s", "green")
                     else:
                         cprint(f"Selected {unit}", "green")
                     return amount, unit
@@ -145,7 +148,10 @@ def time_amount_input(min:int, max:int, prompt:str = "Enter a time amount: ", al
                 print(f"Invalid. Incorrect unit. Enter 'help' for list of units.")
                 continue
         if unit not in special:
-            cprint(f"Selected {amount} {unit}(s)", "green")
+            if amount == 1:
+                cprint(f"Selected {unit}", "green")
+            else:
+                cprint(f"Selected {amount} {unit}s", "green")
         else:
             cprint(f"Selected {unit}", "green")
         return amount, unit

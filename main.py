@@ -351,9 +351,7 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
                 prompt="Enter the number of fission-events per growth rate unit: ",
                 infinite_end=True
             )
-            fission_frequency_unit = None
         else: 
-            fission_frequency_unit = fission_frequency[1]
             fission_frequency = fission_frequency[1] # returns as total fission events unit
         models_data.append(["sophisticated"] + [initial_population, growth_rate, fission_frequency])
 
@@ -459,8 +457,8 @@ if __name__ == "__main__":
                 continue
             elif change_setting == "r":
                 rounding_amount = ranged_input(
-                    min = 0,
-                    max = 10,
+                    start = 0,
+                    end = 10,
                     prompt = f"Enter the number of decimals for rounding: (Current: {rounding_amount}) ",
                 )
         elif command == "h":
