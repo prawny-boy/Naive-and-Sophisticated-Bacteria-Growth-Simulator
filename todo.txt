@@ -5,3 +5,4 @@ fix the not working naive model target pop formula
 change the labels of lines in a graph to print the model its representing as it just says final, added, start on it (can also do subplots and have one graph for one model)
 add limits to numbers
 add plural checking in time amount input
+for listing output use table instead

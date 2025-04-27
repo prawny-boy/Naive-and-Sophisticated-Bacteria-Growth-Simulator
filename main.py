@@ -106,7 +106,7 @@ def calculate_population_size(model_type: str, initial_population: float, growth
     if model_type == "naive":
         return initial_population + (rate.get_quantity() * initial_population * projection_time.get_quantity())
     if model_type == "sophisticated":
-        rate_over_fission = rate.get_quantity() / fission_frequency
+        rate_over_fission = rate.get_quantity() / float(fission_frequency)
         total_fission_events = projection_time.get_quantity() * fission_frequency
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
@@ -118,7 +118,7 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
     if model_type == "naive":
         time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity()) # IMPORTANT no working
     elif model_type == "sophisticated":
-        time_needed = log(target_population_ratio) / (fission_frequency * log(1 + rate.get_quantity() / fission_frequency))
+        time_needed = log(target_population_ratio) / (fission_frequency * log(1 + rate.get_quantity() / float(fission_frequency)))
     return TimeAmount(ceil(time_needed), output_unit)
 
 def show_graph(x_values:list[list[list]], y_values:list[list[list]], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", line_labels:list[str] = ["Final"], graph_type:str = "line"):
@@ -235,10 +235,10 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
     for i in range(len(models_data)):
         calculation_data.append([]) # add a new model to the list
         projection_time_count = 0
+        if models_data[i][0] == "sophisticated": # models_data[i][3] is the fission frequency convert before calculations
+            if type(models_data[i][3]) == str: # if the fission frequency is a string
+                models_data[i][3] = SECONDS_IN_UNIT[models_data[i][2].get_unit()] / SECONDS_IN_UNIT[models_data[i][3]] # models_data[i][2] is the growth rate
         if condition == "projected":
-            if models_data[i][0] == "sophisticated": # models_data[i][3] is the fission frequency convert before calculations
-                if type(models_data[i][3]) == str: # if the fission frequency is a string
-                    models_data[i][3] = SECONDS_IN_UNIT[models_data[i][2].get_unit()] / SECONDS_IN_UNIT[models_data[i][3]] # models_data[i][2] is the growth rate
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
             if output_as == "list" or output_as == "columns":
