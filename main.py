@@ -110,16 +110,18 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         total_fission_events = projection_time.get_quantity() * fission_frequency
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
-def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, target_population: float, output_unit: str) -> TimeAmount:
-    target_population_ratio = ceil(target_population) / initial_population
+def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, target_population: float) -> TimeAmount|int:
+    target_population_ratio = target_population / initial_population
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
-    rate.scale(output_unit) 
     rate.quantity /= 100
+    try: increment = 1 / fission_frequency
+    except: increment = 1
     if model_type == "naive":
         time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity()) # IMPORTANT no working
     elif model_type == "sophisticated":
         time_needed = log(target_population_ratio) / (fission_frequency * log(1 + rate.get_quantity() / float(fission_frequency)))
-    return TimeAmount(ceil(time_needed), output_unit)
+        time_needed = ceil(time_needed / increment) * increment # this is to ceiling the time needed by the frequency increment
+    return TimeAmount(time_needed, rate.get_unit()), increment
 
 def show_graph(x_values:list[list[list]], y_values:list[list[list]], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", line_labels:list[str] = ["Final"], graph_type:str = "line"):
     for line in range(len(x_values)):
@@ -246,13 +248,14 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
                     projection_time_count += 1
         elif condition == "population":
-            time_needed:TimeAmount = calculate_time_to_reach_target(*models_data[i], target_population, models_data[i][2].get_unit()) # models_data[i][2] is the growth rate 
+            time_needed:TimeAmount; increment:int
+            time_needed, increment = calculate_time_to_reach_target(*models_data[i], target_population) # models_data[i][2] is the growth rate 
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [time_needed])
             elif output_as == "list" or output_as == "columns":
-                for _ in range(time_needed.get_quantity() + 1):
+                for _ in range(int(time_needed.get_quantity()/increment) + 1):
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, time_needed.get_unit())])
-                    projection_time_count += 1
+                    projection_time_count += increment
     return calculation_data
 
 def print_results(results:dict[str, list], opening_population:list[list], added_population:list[list], final_population:list[list], model_configuration:dict[str, list[int|TimeAmount]], condition:str, output_as:str):
@@ -267,7 +270,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 titles=[f"Time (in {time_amount_of_condition.get_unit()}s)", "Opening", "Added", "Final"],
             )
             if condition == "population":
-                time_needed = None # IMPORTANT change this to the time needed to reach the target population in right units
+                time_needed = time_amount_of_condition
                 print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
                 print(f"Final Population after {time_amount_of_condition}: {final_population[i][-1]}\n")
@@ -287,7 +290,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             result = results[model]
             printing_results_list = ", ".join([str(i) for i in result])
             if condition == "population":
-                time_needed = None # IMPORTANT change this to the time needed to reach the target population in right units (currently in growth rate units)
+                time_needed = time_amount_of_condition
                 print(f"Forward Projection for {model}: {printing_results_list}")
                 print(f"Time taken to reach population: {time_needed}\n")
             elif condition == "projected":
