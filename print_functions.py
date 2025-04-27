@@ -14,6 +14,7 @@ def limited_input(choices: list = ["y", "n"], prompt: str = "Pick an option:", p
         if answer in number_choices:
             return choices[int(answer) - 1]
         if answer in ["q", "quit"]:
+            cprint("Selected Quit Program", "green")
             sys.exit()
         cprint(error, error_colour, attrs=error_attrs)
 

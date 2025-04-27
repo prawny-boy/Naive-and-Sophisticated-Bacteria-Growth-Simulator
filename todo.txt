@@ -1,6 +1,5 @@
 graphing error when doing calculating time for reaching population with 2 models at the same time (check if fixed after doing time needed issue)
 implement module 5
-fix the not working naive model target pop formula
 change the labels of lines in a graph to print the model its representing as it just says final, added, start on it (can also do subplots and have one graph for one model)
 add limits to numbers
 add plural checking in time amount input

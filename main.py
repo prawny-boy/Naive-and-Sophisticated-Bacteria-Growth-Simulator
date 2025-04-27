@@ -117,7 +117,7 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
     try: increment = 1 / fission_frequency
     except: increment = 1
     if model_type == "naive":
-        time_needed = (target_population_ratio - 1) / (initial_population * rate.get_quantity()) # IMPORTANT no working
+        time_needed = ceil((target_population - initial_population) / (initial_population * rate.get_quantity()))
     elif model_type == "sophisticated":
         time_needed = log(target_population_ratio) / (fission_frequency * log(1 + rate.get_quantity() / float(fission_frequency)))
         time_needed = ceil(time_needed / increment) * increment # this is to ceiling the time needed by the frequency increment
@@ -134,8 +134,8 @@ def show_graph(x_values:list[list[list]], y_values:list[list[list]], title:str =
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.legend(loc='best')
-    plt.show()
     cprint("Opened Graph. Close the graph to continue...\n", color="grey", attrs=["dark"])
+    plt.show()
 
 def input_custom_settings():
     print_title("Input Custom Settings")
