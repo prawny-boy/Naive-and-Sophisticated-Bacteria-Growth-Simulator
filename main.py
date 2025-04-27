@@ -263,6 +263,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
     if output_as == "columns":
         for i in range(len(results)):
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
+            increment = model_configuration[list(results.keys())[i]][-2] # increment is the fission frequency
             print_table(
                 data=[[n for n in range(len(opening_population[i]))], opening_population[i], added_population[i], final_population[i]],
                 table_length=len(opening_population[i]) + 1,
@@ -270,8 +271,12 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 titles=[f"Time (in {time_amount_of_condition.get_unit()}s)", "Opening", "Added", "Final"],
             )
             if condition == "population":
-                time_needed = time_amount_of_condition
-                print(f"Time taken to reach population: {time_needed}\n")
+                if time_amount_of_condition.get_quantity() - int(time_amount_of_condition.get_quantity()) == 0:
+                    time_needed_format = f"{time_amount_of_condition}"
+                else:
+                    extra_fission_events = int((time_amount_of_condition.get_quantity() - int(time_amount_of_condition.get_quantity())) * increment)
+                    time_needed_format = f"{TimeAmount(int(time_amount_of_condition.get_quantity()), time_amount_of_condition.get_unit())} and {extra_fission_events} fission event(s) ({time_amount_of_condition})"
+                print(f"Time taken to reach population: {time_needed_format}\n")
             elif condition == "projected":
                 print(f"Final Population after {time_amount_of_condition}: {final_population[i][-1]}\n")
 
@@ -286,13 +291,18 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
     elif output_as == "list":
         for i in range(len(results)):
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
+            increment = model_configuration[list(results.keys())[i]][-2] # increment is the fission frequency
             model = list(results.keys())[i]
             result = results[model]
             printing_results_list = ", ".join([str(i) for i in result])
             if condition == "population":
-                time_needed = time_amount_of_condition
+                if time_amount_of_condition.get_quantity() - int(time_amount_of_condition.get_quantity()) == 0:
+                    time_needed_format = f"{time_amount_of_condition}"
+                else:
+                    extra_fission_events = int((time_amount_of_condition.get_quantity() - int(time_amount_of_condition.get_quantity())) * increment)
+                    time_needed_format = f"{TimeAmount(int(time_amount_of_condition.get_quantity()), time_amount_of_condition.get_unit())} and {extra_fission_events} fission event(s) ({time_amount_of_condition})"
                 print(f"Forward Projection for {model}: {printing_results_list}")
-                print(f"Time taken to reach population: {time_needed}\n")
+                print(f"Time taken to reach population: {time_needed_format}\n")
             elif condition == "projected":
                 print(f"Over Time for {model}: {printing_results_list}")
                 print(f"Final Population after {time_amount_of_condition}: {result[-1]}\n")
