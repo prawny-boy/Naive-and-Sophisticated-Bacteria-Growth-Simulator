@@ -44,7 +44,7 @@ SIMULATION_SETTINGS = [
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 5,
-        "forced": {"growth_rate": [100, "day"], "projected_time": [1, "day"], "fission_frequency": {1: "quarter-day", 2: "2-hour", 3: "hour", 4: "minute", 5: "second"}},
+        "forced": {"initial_population": "same", "growth_rate": [100, "day"], "projection_time": [1, "day"], "fission_frequency": ["quarter-day", "2-hour", "hour", "minute", "second"]}, # if forced has a dict is does it by module
     },
     # Presets start here
     {
@@ -365,10 +365,11 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
 def run_inputs(settings:dict[str, str|int|list|dict]):
     models_data = []
     if len(settings["forced"]) > 0: cprint("Some variables may have been forced...", "grey", attrs=["dark"])
+
     for i in range(settings["naive_models"]):
         print_title(f"Naive Model {i + 1}")
         if "initial_population" in settings["forced"].keys(): initial_population = settings["forced"]["initial_population"]
-        else: initial_population = ranged_input(*inital_population_limits, "Enter the initial population: ", infinite_end=True)
+        else: initial_population = ranged_input(*inital_population_limits, "Enter the initial population: ")
         if "growth_rate" in settings["forced"].keys(): growth_rate = TimeAmount(*settings["forced"]["growth_rate"])
         else: growth_rate = TimeAmount(*time_amount_input(*growth_rate_limits, "Enter the growth rate % (7% = 7): ",))
         models_data.append(["naive"] + [initial_population, growth_rate, None])
@@ -376,19 +377,32 @@ def run_inputs(settings:dict[str, str|int|list|dict]):
     for i in range(settings["sophisticated_models"]):
         print_title(f"Sophisticated Model {i + 1}")
         if "initial_population" in settings["forced"].keys(): initial_population = settings["forced"]["initial_population"]
-        else: initial_population = ranged_input(*inital_population_limits, "Enter the initial population: ", infinite_end=True)
+        else: initial_population = ranged_input(*inital_population_limits, "Enter the initial population: ")
         if "growth_rate" in settings["forced"].keys(): growth_rate = TimeAmount(*settings["forced"]["growth_rate"])
         else: growth_rate = TimeAmount(*time_amount_input(*growth_rate_limits, "Enter the growth rate % (7% = 7): ",))
-        if "fission_frequency" in settings["forced"].keys(): fission_frequency = settings["forced"]["fission_frequency"]
+        if "fission_frequency" in settings["forced"].keys(): 
+            if type(settings["forced"]["fission_frequency"]) == list:
+                fission_frequency = settings["forced"]["fission_frequency"][i]
+                cprint(f"Fission Frequency set to: {fission_frequency}...", "grey", attrs=["dark"])
+            else:
+                fission_frequency = settings["forced"]["fission_frequency"]
         else:
             fission_frequency = time_amount_input(
                 1, 1, "Enter the fission-event frequency time unit (or custom): ",
                 special=["custom"],
                 avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
             )
-            if "custom" in fission_frequency: fission_frequency = ranged_input(*fission_frequency_limits, "Enter the number of fission-events per growth rate unit: ", infinite_end=True)
+            if "custom" in fission_frequency: fission_frequency = ranged_input(*fission_frequency_limits, "Enter the number of fission-events per growth rate unit: ")
             else: fission_frequency = fission_frequency[1] # returns as total fission events unit
         models_data.append(["sophisticated"] + [initial_population, growth_rate, fission_frequency])
+
+    # MODULE 5 ONLY: get inital population for all modules
+    if "initial_population" in settings["forced"].keys():
+        if settings["forced"]["initial_population"] == "same":
+            print_title("Initial Population")
+            initial_population = ranged_input(*inital_population_limits, "Enter the initial population for all modules: ")
+            for i in range(len(models_data)):
+                models_data[i][1] = initial_population # set initial population for all modules
 
     # Get projection time or target population
     target_population = None
@@ -403,7 +417,6 @@ def run_inputs(settings:dict[str, str|int|list|dict]):
             prompt = "Select the condition type:",
             return_key=True,
         )
-
     if condition == "population":
         if "target_population" in settings["forced"].keys(): target_population = settings["forced"]["target_population"]
         else: 
@@ -467,7 +480,7 @@ if __name__ == "__main__":
                 "2": "Time for a sophisticated model to reach the target population", 
                 "3": "Compare two sophisticated population models", 
                 "4": "Generate detailed projections formatted as columns", 
-                "5": "Model increases in fission-event frequency (Unfinished)",
+                "5": "Model increases in fission-event frequency",
                 "0": "Custom Simulation Settings (Sandbox)",
                 "p": "Run Presets for Simulations",
                 "s": "Settings",
