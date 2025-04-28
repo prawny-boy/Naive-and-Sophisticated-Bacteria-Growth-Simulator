@@ -169,7 +169,8 @@ def input_custom_settings():
         return_key=True,
     )
     forced = {}
-    while selected_forced_setting != "d":
+    selected_forced_setting = ""
+    while selected_forced_setting != "done/continue":
         selected_forced_setting = listed_input(
             choices = {"i": "Inital Population", 
                        "g": "Growth Rate",
@@ -178,7 +179,7 @@ def input_custom_settings():
                        "tp": "Target Population",
                        "d": "Done/Continue"},
             prompt = "Select a variable to force:"
-        )
+        ).lower()
         if selected_forced_setting == "inital population": 
             forced["initial_population"] = ranged_input(*inital_population_limits, "Enter the initial population value to force: ", infinite_end=True)
         elif selected_forced_setting == "growth rate": 
@@ -189,16 +190,17 @@ def input_custom_settings():
                 special=["custom"],
                 avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
             )
-            if "custom" in fission_frequency: fission_frequency = ranged_input(*fission_frequency_limits, "Enter the number of fission-events per growth rate unit to force: ", infinite_end=True)
-            else: fission_frequency = fission_frequency[1]
+            if "custom" in forced["fission_frequency"]: forced["fission_frequency"] = ranged_input(*fission_frequency_limits, "Enter the number of fission-events per growth rate unit to force: ", infinite_end=True)
+            else: forced["fission_frequency"] = forced["fission_frequency"][1]
         elif selected_forced_setting == "projection time": 
-            forced["projection_time"] = time_amount_input(*projection_time_limits, "Enter the projection time value to force: ", infinite_end=True)
+            forced["projection_time"] = time_amount_input(*projection_time_limits, "Enter the projection time value to force: ", allow_float=False, infinite_end=True)
         elif selected_forced_setting == "target population": 
             forced["target_population"] = ranged_input(*target_population_limits, "Enter the target population value to force: ", infinite_end=True)
 
     print_title("Selected Settings")
     print(f"Output: {output.capitalize()}, Condition: {condition.capitalize()}")
     print(f"Naive Models: {naive_models}, Sophisticated Models: {sophisticated_models}")
+    print(f"Forced Settings: {forced}")
     return {
         "name": "Custom Settings",
         "output": output,
@@ -362,6 +364,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
 
 def run_inputs(settings:dict[str, str|int|list|dict]):
     models_data = []
+    if len(settings["forced"]) > 0: cprint("Some variables may have been forced...", "grey", attrs=["dark"])
     for i in range(settings["naive_models"]):
         print_title(f"Naive Model {i + 1}")
         if "initial_population" in settings["forced"].keys(): initial_population = settings["forced"]["initial_population"]
@@ -402,13 +405,14 @@ def run_inputs(settings:dict[str, str|int|list|dict]):
         )
 
     if condition == "population":
-        print_title("Target Population")
         if "target_population" in settings["forced"].keys(): target_population = settings["forced"]["target_population"]
-        else: target_population = ranged_input(*target_population_limits, "Enter the target population for all models: ", infinite_end=True)
+        else: 
+            print_title("Target Population")
+            target_population = ranged_input(*target_population_limits, "Enter the target population for all models: ", infinite_end=True)
     elif condition == "projected":
-        print_title("Projection Timeframe")
         if "projection_time" in settings["forced"].keys(): projection_time = TimeAmount(*settings["forced"]["projection_time"])
         else:
+            print_title("Projection Timeframe")
             projection_time = TimeAmount(*time_amount_input(
                 *projection_time_limits, 
                 "Enter the projection timeframe for all models: ",
@@ -424,19 +428,30 @@ def run_module(module_number: int):
         settings = input_custom_settings()
     else:
         settings = SIMULATION_SETTINGS[module_number - 1]
-    print_header(f"Simulation {module_number}: {settings['name']}")
     
-    models_data, projection_time, target_population, condition = run_inputs(settings)
+    replay = ""
+    while replay != "n":
+        print_header(f"Simulation {module_number}: {settings['name']}")
+        if replay == "y": cprint("Replaying the last module...", "grey", attrs=["dark"])
+        
+        models_data, projection_time, target_population, condition = run_inputs(settings)
 
-    # SUMMARY
-    summary(models_data, projection_time, target_population, condition)
-    
-    # COMPILE DATA FOR CACULATION
-    output_as = settings["output"]
-    calculation_data = compile_data(models_data, projection_time, target_population, condition, output_as)
+        # SUMMARY
+        summary(models_data, projection_time, target_population, condition)
+        
+        # COMPILE DATA FOR CACULATION
+        output_as = settings["output"]
+        calculation_data = compile_data(models_data, projection_time, target_population, condition, output_as)
 
-    # CALCULATE & PRINT RESULTS
-    print_results(*calculate_models(calculation_data), condition, output_as)
+        # CALCULATE & PRINT RESULTS
+        print_results(*calculate_models(calculation_data), condition, output_as)
+
+        # REPLAY
+        replay = listed_input(
+            choices = {"y": "Replay", "n": "Exit to Main Menu"},
+            prompt = "Replay Last Module?",
+            return_key=True,
+        )
 
 if __name__ == "__main__":
     print("-------------------------------------------------------------------")
