@@ -3,8 +3,8 @@ from math import log, ceil
 import matplotlib.pyplot as plt
 import numpy as np
 
-SECONDS_IN_UNIT = {"year": 31536000, "half-year": 31536000 / 2, "quarter-year": 31536000 / 4, "month": 2592000, "week": 604800, "day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "hour": 3600, "minute": 60, "second": 1}
-UNITS_ABBREVIATION = {"year": "y", "half-year": "hy", "quarter-year": "qy", "month": "m", "week": "w", "day": "d", "half-day": "hd", "quarter-day": "qd", "hour": "h", "minute": "min", "second": "s"}
+SECONDS_IN_UNIT = {"year": 31536000, "half-year": 31536000 / 2, "quarter-year": 31536000 / 4, "month": 2592000, "week": 604800, "day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "2-hour": 3600 * 2, "hour": 3600, "minute": 60, "second": 1}
+UNITS_ABBREVIATION = {"year": "y", "half-year": "hy", "quarter-year": "qy", "month": "m", "week": "w", "day": "d", "half-day": "hd", "quarter-day": "qd", "2-hour": "2h", "hour": "h", "minute": "min", "second": "s"}
 SIMULATION_SETTINGS = [
     {
         "name": "Compare a naive and sophisticated model",
@@ -43,8 +43,8 @@ SIMULATION_SETTINGS = [
         "output": "list",
         "condition": "projected",
         "naive_models": 0,
-        "sophisticated_models": 1,
-        "forced": {"growth_rate": [100, "day"], "projected_time": [1, "day"]},
+        "sophisticated_models": 5,
+        "forced": {"growth_rate": [100, "day"], "projected_time": [1, "day"], "fission_frequency": {1: "quarter-day", 2: "2-hour", 3: "hour", 4: "minute", 5: "second"}},
     },
     # Presets start here
     {
