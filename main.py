@@ -12,6 +12,7 @@ SIMULATION_SETTINGS = [
         "condition": "projected",
         "naive_models": 1,
         "sophisticated_models": 1,
+        "forced": {},
     },
     {
         "name": "Time for a sophisticated model to reach the target population",
@@ -19,6 +20,7 @@ SIMULATION_SETTINGS = [
         "condition": "population",
         "naive_models": 0,
         "sophisticated_models": 1,
+        "forced": {},
     },
     {
         "name": "Compare population models",
@@ -26,6 +28,7 @@ SIMULATION_SETTINGS = [
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 2,
+        "forced": {},
     },
     {
         "name": "Generate detailed projections formatted as columns",
@@ -33,13 +36,15 @@ SIMULATION_SETTINGS = [
         "condition": "varied",
         "naive_models": 0,
         "sophisticated_models": 1,
+        "forced": {},
     },
     {
         "name": "Model increases in fission-event frequency",
-        "output": "final",
-        "condition": "fission",
+        "output": "list",
+        "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 1,
+        "forced": {"growth_rate": [100, "day"], "projected_time": [1, "day"]},
     },
     # Presets start here
     {
@@ -48,6 +53,7 @@ SIMULATION_SETTINGS = [
         "condition": "varied",
         "naive_models": 0,
         "sophisticated_models": 2,
+        "forced": {},
     },
     {
         "name": "Compare two naive models",
@@ -55,6 +61,7 @@ SIMULATION_SETTINGS = [
         "condition": "varied",
         "naive_models": 2,
         "sophisticated_models": 0,
+        "forced": {},
     },
     {
         "name": "Population growth of a naive model",
@@ -62,11 +69,17 @@ SIMULATION_SETTINGS = [
         "condition": "varied",
         "naive_models": 1,
         "sophisticated_models": 0,
+        "forced": {},
     },
 ]
 
 # Settings
 rounding_amount = 2
+inital_population_limits = [1, 1000000000]
+growth_rate_limits = [1, 100]
+fission_frequency_limits = [1, 1000000000]
+projection_time_limits = [0, 10000000000]
+target_population_limits = [0, 1000000000]
 
 class TimeAmount:
     def __init__(self, quantity:float, unit:str):
@@ -141,20 +154,48 @@ def input_custom_settings():
     print_title("Input Custom Settings")
     naive_models = ranged_input(0, 10, "Enter the number of naive models: ")
     sophisticated_models = ranged_input(0, 10, "Enter the number of sophisticated models: ")
-    output = listed_input(
+    output:str = listed_input(
         choices = {"final": "Final Population Size", 
                    "list": "List of Populations over Time", 
                    "columns": "Columns of Populations over Time (start, added, end)"},
         prompt = "Select the output type:",
         return_key=True,
     )
-    condition = listed_input(
+    condition:str = listed_input(
         choices = {"population": "Target Population", 
                    "varied": "Varied Population",   
                    "projected": "Projected Time"},
         prompt = "Select the condition type:",
         return_key=True,
     )
+    forced = {}
+    while selected_forced_setting != "d":
+        selected_forced_setting = listed_input(
+            choices = {"i": "Inital Population", 
+                       "g": "Growth Rate",
+                       "f": "Fission Frequency",
+                       "t": "Projection Time",
+                       "tp": "Target Population",
+                       "d": "Done/Continue"},
+            prompt = "Select a variable to force:"
+        )
+        if selected_forced_setting == "inital population": 
+            forced["initial_population"] = ranged_input(*inital_population_limits, "Enter the initial population value to force: ", infinite_end=True)
+        elif selected_forced_setting == "growth rate": 
+            forced["growth_rate"] = time_amount_input(*growth_rate_limits, "Enter the growth rate value to force: ", infinite_end=True)
+        elif selected_forced_setting == "fission frequency": 
+            forced["fission_frequency"] = time_amount_input(
+                1, 1, "Enter the fission-event frequency time unit to force (or custom): ",
+                special=["custom"],
+                avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
+            )
+            if "custom" in fission_frequency: fission_frequency = ranged_input(*fission_frequency_limits, "Enter the number of fission-events per growth rate unit to force: ", infinite_end=True)
+            else: fission_frequency = fission_frequency[1]
+        elif selected_forced_setting == "projection time": 
+            forced["projection_time"] = time_amount_input(*projection_time_limits, "Enter the projection time value to force: ", infinite_end=True)
+        elif selected_forced_setting == "target population": 
+            forced["target_population"] = ranged_input(*target_population_limits, "Enter the target population value to force: ", infinite_end=True)
+
     print_title("Selected Settings")
     print(f"Output: {output.capitalize()}, Condition: {condition.capitalize()}")
     print(f"Naive Models: {naive_models}, Sophisticated Models: {sophisticated_models}")
@@ -164,6 +205,7 @@ def input_custom_settings():
         "condition": condition,
         "naive_models": naive_models,
         "sophisticated_models": sophisticated_models,
+        "forced": forced
     }
 
 def summary(models_data, projection_time:TimeAmount, target_population:TimeAmount, condition:str):
@@ -185,7 +227,7 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
         fission_frequency:TimeAmount = model[3]
 
         print(f"{model_type.title()} Model {model_number}: I = {model_population}, g = {model_growth_rate}% per {model_growth_unit}", end="")
-        
+
         print(f", Fission Event Frequency: {fission_frequency}") if model_type == "sophisticated" else print("")
 
         if condition == "projected":
@@ -318,41 +360,31 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
         for model, result in results.items():
             print(f"{model}: {result[-1]}\n")
 
-def run_inputs(settings:dict[str, str|int|list[str]]):
+def run_inputs(settings:dict[str, str|int|list|dict]):
     models_data = []
     for i in range(settings["naive_models"]):
         print_title(f"Naive Model {i + 1}")
-        initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-        growth_rate = TimeAmount(*time_amount_input(
-            min = 1,
-            max = 100,
-            prompt = "Enter the growth rate % (7% = 7): ",
-        ))
+        if "initial_population" in settings["forced"].keys(): initial_population = settings["forced"]["initial_population"]
+        else: initial_population = ranged_input(*inital_population_limits, "Enter the initial population: ", infinite_end=True)
+        if "growth_rate" in settings["forced"].keys(): growth_rate = TimeAmount(*settings["forced"]["growth_rate"])
+        else: growth_rate = TimeAmount(*time_amount_input(*growth_rate_limits, "Enter the growth rate % (7% = 7): ",))
         models_data.append(["naive"] + [initial_population, growth_rate, None])
+    
     for i in range(settings["sophisticated_models"]):
         print_title(f"Sophisticated Model {i + 1}")
-        initial_population = ranged_input(1, None, "Enter the initial population: ", infinite_end=True)
-        growth_rate = TimeAmount(*time_amount_input(
-            min = 1,
-            max = 100,
-            prompt = "Enter the growth rate % (7% = 7): ",
-        ))
-        fission_frequency = time_amount_input(
-            min = 1,
-            max = 1,
-            prompt = "Enter the fission-event frequency time unit (or custom): ",
-            special=["custom"],
-            avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
-        )
-        if "custom" in fission_frequency:
-            fission_frequency = ranged_input(
-                start=1, 
-                end=None, 
-                prompt="Enter the number of fission-events per growth rate unit: ",
-                infinite_end=True
+        if "initial_population" in settings["forced"].keys(): initial_population = settings["forced"]["initial_population"]
+        else: initial_population = ranged_input(*inital_population_limits, "Enter the initial population: ", infinite_end=True)
+        if "growth_rate" in settings["forced"].keys(): growth_rate = TimeAmount(*settings["forced"]["growth_rate"])
+        else: growth_rate = TimeAmount(*time_amount_input(*growth_rate_limits, "Enter the growth rate % (7% = 7): ",))
+        if "fission_frequency" in settings["forced"].keys(): fission_frequency = settings["forced"]["fission_frequency"]
+        else:
+            fission_frequency = time_amount_input(
+                1, 1, "Enter the fission-event frequency time unit (or custom): ",
+                special=["custom"],
+                avaliable_units=UNITS_ABBREVIATION | {"custom": "c"},
             )
-        else: 
-            fission_frequency = fission_frequency[1] # returns as total fission events unit
+            if "custom" in fission_frequency: fission_frequency = ranged_input(*fission_frequency_limits, "Enter the number of fission-events per growth rate unit: ", infinite_end=True)
+            else: fission_frequency = fission_frequency[1] # returns as total fission events unit
         models_data.append(["sophisticated"] + [initial_population, growth_rate, fission_frequency])
 
     # Get projection time or target population
@@ -371,16 +403,18 @@ def run_inputs(settings:dict[str, str|int|list[str]]):
 
     if condition == "population":
         print_title("Target Population")
-        target_population = ranged_input(1, None, "Enter the target population for all models: ", infinite_end=True)
+        if "target_population" in settings["forced"].keys(): target_population = settings["forced"]["target_population"]
+        else: target_population = ranged_input(*target_population_limits, "Enter the target population for all models: ", infinite_end=True)
     elif condition == "projected":
         print_title("Projection Timeframe")
-        projection_time = TimeAmount(*time_amount_input(
-            min = 1,
-            max = None,
-            prompt = "Enter the projection timeframe for all models: ",
-            infinite_end=True,
-            allow_float=False
-        ))
+        if "projection_time" in settings["forced"].keys(): projection_time = TimeAmount(*settings["forced"]["projection_time"])
+        else:
+            projection_time = TimeAmount(*time_amount_input(
+                *projection_time_limits, 
+                "Enter the projection timeframe for all models: ",
+                allow_float=False,
+                infinite_end=True,
+            ))
     
     return models_data, projection_time, target_population, condition
 
