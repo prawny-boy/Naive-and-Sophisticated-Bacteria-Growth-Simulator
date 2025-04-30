@@ -136,17 +136,23 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
         time_needed = ceil(time_needed / increment) * increment # this is to ceiling the time needed by the frequency increment
     return TimeAmount(time_needed, rate.get_unit()), increment
 
-def show_graph(x_values:list[list[list]], y_values:list[list[list]], title:str = "Bacteria Growth Over Time", x_label:str = "Time", y_label:str = "Bacteria Population", line_labels:list[str] = ["Final"], graph_type:str = "line"):
-    for line in range(len(x_values)):
-        for i in range(len(x_values[line])):
-            x = np.array(x_values[line][i])
-            y = np.array(y_values[line][i])
-            if graph_type == "line": plt.plot(x, y, label=line_labels[line])
-            elif graph_type == "bar": plt.bar(x, y)
-    plt.title(title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.legend(loc='best')
+def show_graph(results:dict[str, list], opening_population, added_population, final_population, model_configuration, output_as):
+    if output_as == "columns":
+        plt.suptitle() # not finished
+    elif output_as == "list":
+        for model, result in results.items():
+            increment = model_configuration[model][-2]
+            plt.plot([i*increment for i in range(len(result))], result, label=model)
+        plt.title("Population Size Over Time")
+        plt.xlabel(f"Time ({model_configuration[list(results.keys())[0]][-1]})")
+        plt.ylabel("Population Size")
+    elif output_as == "final": # bar graph
+        for model, result in results.items():
+            plt.bar(model, result[-1])
+        plt.title("Final Population Size by Model")
+        plt.xlabel("Models")
+        plt.ylabel("Population Size")
+    
     cprint("Opened Graph. Close the graph to continue...\n", color="grey", attrs=["dark"])
     plt.show()
 
@@ -325,12 +331,13 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 print(f"Final Population after {time_amount_of_condition}: {final_population[i][-1]}\n")
 
         if limited_input(prompt="Print Graph?") == "y":
-            show_graph(
-                x_values = [[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]] * 3, 
-                y_values=[opening_population, added_population, final_population],
-                x_label=f"Time (in {time_amount_of_condition.get_unit()}s)",
-                line_labels=["Opening", "Added", "Final"]
-            )
+            pass
+            # show_graph(
+            #     x_values = [[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]] * 3, 
+            #     y_values=[opening_population, added_population, final_population],
+            #     x_label=f"Time (in {time_amount_of_condition.get_unit()}s)",
+            #     line_labels=["Opening", "Added", "Final"]
+            # ) # overhaul
     
     elif output_as == "list":
         for i in range(len(results)):
@@ -352,11 +359,12 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                 print(f"Final Population after {time_amount_of_condition}: {result[-1]}\n")
         
         if limited_input(prompt="Print Graph?") == "y":
-            show_graph(
-                x_values=[[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]], 
-                y_values=[list(results.values())], # IMPORTANT only has a few, x has too many values (list too long)
-                x_label=f"Time (in {time_amount_of_condition.get_unit()}s)"
-            )
+            pass
+            # show_graph(
+            #     x_values=[[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]], 
+            #     y_values=[list(results.values())], # IMPORTANT only has a few, x has too many values (list too long)
+            #     x_label=f"Time (in {time_amount_of_condition.get_unit()}s)"
+            # )
     
     elif output_as == "final":
         for model, result in results.items():
