@@ -123,7 +123,7 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         total_fission_events = projection_time.get_quantity() * fission_frequency
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
-def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, target_population: float) -> TimeAmount|int:
+def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, target_population: float, output_unit: str) -> TimeAmount|int:
     target_population_ratio = target_population / initial_population
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
     rate.quantity /= 100
@@ -134,7 +134,7 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
     elif model_type == "sophisticated":
         time_needed = log(target_population_ratio) / (fission_frequency * log(1 + rate.get_quantity() / float(fission_frequency)))
         time_needed = ceil(time_needed / increment) * increment # this is to ceiling the time needed by the frequency increment
-    return TimeAmount(time_needed, rate.get_unit()), increment
+    return TimeAmount(time_needed, output_unit), increment
 
 def show_graph(results:dict[str, list], opening_population, added_population, final_population, model_configuration, output_as):
     if output_as == "columns":
@@ -281,7 +281,7 @@ def calculate_models(calculate_data:list[list[list]]):
     
     return (results, opening_population, added_population, final_population, model_configuration)
 
-def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, target_population:int|None, condition:str, output_as:str):
+def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, target_population:int|None, output_unit:str, condition:str, output_as:str):
     calculation_data:list[list[list[str|int|TimeAmount]]] = []
 
     for i in range(len(models_data)):
@@ -295,11 +295,11 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
             if output_as == "list" or output_as == "columns":
                 for _ in range(projection_time.get_quantity() + 1):      
-                    calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
+                    calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, output_unit)]) # add a calculation to the new model
                     projection_time_count += 1
         elif condition == "population":
             time_needed:TimeAmount; increment:int
-            time_needed, increment = calculate_time_to_reach_target(*models_data[i], target_population) # models_data[i][2] is the growth rate 
+            time_needed, increment = calculate_time_to_reach_target(*models_data[i], target_population, output_unit) # models_data[i][2] is the growth rate 
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [time_needed])
             elif output_as == "list" or output_as == "columns":
@@ -430,6 +430,7 @@ def run_inputs(settings:dict[str, str|int|list|dict]):
         else: 
             print_title("Target Population")
             target_population = ranged_input(*target_population_limits, "Enter the target population for all models: ", infinite_end=True)
+        output_unit = time_amount_input(1, 1, "Enter the output unit of data: ")[1]
     elif condition == "projected":
         if "projection_time" in settings["forced"].keys(): projection_time = TimeAmount(*settings["forced"]["projection_time"])
         else:
@@ -440,8 +441,9 @@ def run_inputs(settings:dict[str, str|int|list|dict]):
                 allow_float=False,
                 infinite_end=True,
             ))
+        output_unit = projection_time.get_unit()
     
-    return models_data, projection_time, target_population, condition
+    return models_data, projection_time, target_population, output_unit, condition
 
 def run_module(module_number: int):
     # run the module based on the module number and settings
@@ -455,14 +457,14 @@ def run_module(module_number: int):
         print_header(f"Simulation {module_number}: {settings['name']}")
         if replay == "y": cprint("Replaying the last module...", "grey", attrs=["dark"])
         
-        models_data, projection_time, target_population, condition = run_inputs(settings)
+        models_data, projection_time, target_population, output_unit, condition = run_inputs(settings)
 
         # SUMMARY
         summary(models_data, projection_time, target_population, condition)
         
         # COMPILE DATA FOR CACULATION
         output_as = settings["output"]
-        calculation_data = compile_data(models_data, projection_time, target_population, condition, output_as)
+        calculation_data = compile_data(models_data, projection_time, target_population, output_unit, condition, output_as)
 
         # CALCULATE & PRINT RESULTS
         print_results(*calculate_models(calculation_data), condition, output_as)
