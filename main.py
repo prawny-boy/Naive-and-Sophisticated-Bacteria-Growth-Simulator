@@ -1,7 +1,6 @@
 from print_functions import *
 from math import log, ceil
 import matplotlib.pyplot as plt
-import numpy as np
 
 SECONDS_IN_UNIT = {"year": 31536000, "half-year": 31536000 / 2, "quarter-year": 31536000 / 4, "month": 2592000, "week": 604800, "day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "2-hour": 3600 * 2, "hour": 3600, "minute": 60, "second": 1}
 UNITS_ABBREVIATION = {"year": "y", "half-year": "hy", "quarter-year": "qy", "month": "m", "week": "w", "day": "d", "half-day": "hd", "quarter-day": "qd", "2-hour": "2h", "hour": "h", "minute": "min", "second": "s"}
@@ -123,7 +122,7 @@ def calculate_population_size(model_type: str, initial_population: float, growth
         total_fission_events = projection_time.get_quantity() * fission_frequency
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)
 
-def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, target_population: float, output_unit: str) -> TimeAmount|int:
+def calculate_time_to_reach_target(model_type:str, initial_population: float, growth_rate: TimeAmount, fission_frequency: int, target_population: float) -> TimeAmount|int:
     target_population_ratio = target_population / initial_population
     rate = TimeAmount(growth_rate.get_quantity(), growth_rate.get_unit()) # Make sure that the outside growth_rate is not modified
     rate.quantity /= 100
@@ -134,18 +133,32 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
     elif model_type == "sophisticated":
         time_needed = log(target_population_ratio) / (fission_frequency * log(1 + rate.get_quantity() / float(fission_frequency)))
         time_needed = ceil(time_needed / increment) * increment # this is to ceiling the time needed by the frequency increment
-    return TimeAmount(time_needed, output_unit), increment
+    return TimeAmount(time_needed, rate.get_unit()), increment
 
 def show_graph(results:dict[str, list], opening_population, added_population, final_population, model_configuration, output_as):
+    if limited_input(prompt="Print Graph?") == "n": return # stop anythign from happening if the user doesnt want to print a graph
     if output_as == "columns":
-        plt.suptitle() # not finished
+        columns = ceil(len(results)**0.5)
+        rows = ceil(len(results)/columns)
+        for i in range(len(results)):
+            time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
+            increment = model_configuration[list(results.keys())[i]][-2] # increment is the fission frequency
+            plt.subplot(rows, columns, i+1)
+            plt.plot([i*increment for i in range(len(opening_population[i]))], opening_population[i], label="Opening")
+            plt.plot([i*increment for i in range(len(added_population[i]))], added_population[i], label="Added")
+            plt.plot([i*increment for i in range(len(final_population[i]))], final_population[i], label="Final")
+            plt.title(list(results.keys())[i])
+            plt.xlabel(f"Time ({time_amount_of_condition.get_unit()})")
+            plt.ylabel("Population Size")
+
     elif output_as == "list":
         for model, result in results.items():
             increment = model_configuration[model][-2]
             plt.plot([i*increment for i in range(len(result))], result, label=model)
         plt.title("Population Size Over Time")
-        plt.xlabel(f"Time ({model_configuration[list(results.keys())[0]][-1]})")
+        plt.xlabel(f"Time ({model_configuration[list(results.keys())[0]][-1].get_unit()})")
         plt.ylabel("Population Size")
+
     elif output_as == "final": # bar graph
         for model, result in results.items():
             plt.bar(model, result[-1])
@@ -153,6 +166,7 @@ def show_graph(results:dict[str, list], opening_population, added_population, fi
         plt.xlabel("Models")
         plt.ylabel("Population Size")
     
+    plt.legend()
     cprint("Opened Graph. Close the graph to continue...\n", color="grey", attrs=["dark"])
     plt.show()
 
@@ -243,7 +257,7 @@ def summary(models_data, projection_time:TimeAmount, target_population:TimeAmoun
         if condition == "population":
             print(f"Target Population: {target_population}")
 
-def calculate_models(calculate_data:list[list[list]]):
+def calculate_models(calculate_data:list[list[list]], output_unit:str):
     results:dict[str, list] = {}
     model_configuration:dict[str, list[int|TimeAmount]] = {}
     model_result = 0
@@ -260,6 +274,7 @@ def calculate_models(calculate_data:list[list[list]]):
             model_name = f"Sophisticated Model {sophisticated_model_count}"
             sophisticated_model_count += 1
         results[model_name] = [] # add a new model to the dictionary of results
+        calculate_data[i][-1][-1].convert(output_unit)
         model_configuration[model_name] = calculate_data[i][-1] # add a new model to the model configurations
         
         opening_population.append([])
@@ -281,7 +296,7 @@ def calculate_models(calculate_data:list[list[list]]):
     
     return (results, opening_population, added_population, final_population, model_configuration)
 
-def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, target_population:int|None, output_unit:str, condition:str, output_as:str):
+def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:TimeAmount|None, target_population:int|None, condition:str, output_as:str):
     calculation_data:list[list[list[str|int|TimeAmount]]] = []
 
     for i in range(len(models_data)):
@@ -295,11 +310,11 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
             if output_as == "list" or output_as == "columns":
                 for _ in range(projection_time.get_quantity() + 1):      
-                    calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, output_unit)]) # add a calculation to the new model
+                    calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
                     projection_time_count += 1
         elif condition == "population":
             time_needed:TimeAmount; increment:int
-            time_needed, increment = calculate_time_to_reach_target(*models_data[i], target_population, output_unit) # models_data[i][2] is the growth rate 
+            time_needed, increment = calculate_time_to_reach_target(*models_data[i], target_population) # models_data[i][2] is the growth rate 
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [time_needed])
             elif output_as == "list" or output_as == "columns":
@@ -328,17 +343,7 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
                     time_needed_format = f"{TimeAmount(int(time_amount_of_condition.get_quantity()), time_amount_of_condition.get_unit())} and {extra_fission_events} fission event(s) ({time_amount_of_condition})"
                 print(f"Time taken to reach population: {time_needed_format}\n")
             elif condition == "projected":
-                print(f"Final Population after {time_amount_of_condition}: {final_population[i][-1]}\n")
-
-        if limited_input(prompt="Print Graph?") == "y":
-            pass
-            # show_graph(
-            #     x_values = [[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]] * 3, 
-            #     y_values=[opening_population, added_population, final_population],
-            #     x_label=f"Time (in {time_amount_of_condition.get_unit()}s)",
-            #     line_labels=["Opening", "Added", "Final"]
-            # ) # overhaul
-    
+                print(f"Final Population after {time_amount_of_condition}: {final_population[i][-1]}\n") 
     elif output_as == "list":
         for i in range(len(results)):
             time_amount_of_condition = model_configuration[list(results.keys())[i]][-1]
@@ -357,15 +362,6 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             elif condition == "projected":
                 print(f"Over Time for {model}: {printing_results_list}")
                 print(f"Final Population after {time_amount_of_condition}: {result[-1]}\n")
-        
-        if limited_input(prompt="Print Graph?") == "y":
-            pass
-            # show_graph(
-            #     x_values=[[[i for i in range(time_amount_of_condition.get_quantity() + 1)] for _ in range(len(results))]], 
-            #     y_values=[list(results.values())], # IMPORTANT only has a few, x has too many values (list too long)
-            #     x_label=f"Time (in {time_amount_of_condition.get_unit()}s)"
-            # )
-    
     elif output_as == "final":
         for model, result in results.items():
             print(f"{model}: {result[-1]}\n")
@@ -464,10 +460,12 @@ def run_module(module_number: int):
         
         # COMPILE DATA FOR CACULATION
         output_as = settings["output"]
-        calculation_data = compile_data(models_data, projection_time, target_population, output_unit, condition, output_as)
+        calculation_data = compile_data(models_data, projection_time, target_population, condition, output_as)
 
         # CALCULATE & PRINT RESULTS
-        print_results(*calculate_models(calculation_data), condition, output_as)
+        calculations = calculate_models(calculation_data, output_unit)
+        print_results(*calculations, condition, output_as)
+        show_graph(*calculations, output_as)
 
         # REPLAY
         replay = listed_input(
