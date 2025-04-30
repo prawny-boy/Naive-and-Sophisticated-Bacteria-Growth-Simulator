@@ -1,5 +1,5 @@
 from print_functions import *
-from math import log, ceil
+from math import log, ceil, e
 import matplotlib.pyplot as plt
 
 SECONDS_IN_UNIT = {"year": 31536000, "half-year": 31536000 / 2, "quarter-year": 31536000 / 4, "month": 2592000, "week": 604800, "day": 86400, "half-day": 86400 / 2, "quarter-day": 86400 / 4, "2-hour": 3600 * 2, "hour": 3600, "minute": 60, "second": 1}
@@ -139,7 +139,7 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
         time_needed = ceil(time_needed / increment) * increment # this is to ceiling the time needed by the frequency increment
     return TimeAmount(time_needed, rate.get_unit()), increment
 
-def show_graph(results:dict[str, list], opening_population, added_population, final_population, model_configuration, output_as):
+def show_graph(results: dict[str, list], opening_population: list[list], added_population: list[list], final_population: list[list], model_configuration: dict[str, list[int|TimeAmount]], output_as: str):
     if limited_input(prompt="Print Graph?") == "n": return # stop anythign from happening if the user doesnt want to print a graph
     if output_as == "columns":
         columns = ceil(len(results)**0.5)
@@ -165,12 +165,13 @@ def show_graph(results:dict[str, list], opening_population, added_population, fi
 
     elif output_as == "final": # bar graph
         for model, result in results.items():
-            plt.bar(model, result[-1])
+            plt.bar("".join([model[0][0], model.split()[2]]), result[-1])
         plt.title("Final Population Size by Model")
         plt.xlabel("Models")
         plt.ylabel("Population Size")
     
     plt.legend()
+    plt.tight_layout()
     cprint("Opened Graph. Close the graph to continue...\n", color="grey", attrs=["dark"])
     plt.show()
 
@@ -445,6 +446,23 @@ def run_inputs(settings:dict[str, str|int|list|dict]):
     
     return models_data, projection_time, target_population, output_unit, condition
 
+def module_5_info(results: dict[str, list[int]], initial_population: int):
+    # Printing Information
+    print_title("Population Limit")
+    print(f"Theoretical population limit as fission frequency approaches infinity: {round(e*initial_population, rounding_amount)}")
+    print(f"This limit is {round(e, rounding_amount)} times the initial population.")
+    print_title("Research Summary")
+    print("The limit observed here is related to the mathematical constant 'e'. When growth happens continuously (which is approximated by very high fission frequencies), the formula for population growth becomes P(t) = P0 * e^(rt), where r is the continuous growth rate. In this case, r = 1.0 (100% per day), so the limit is the initial population multiplied by e.")
+    input(colored("Press enter to continue...", "grey", attrs=["dark"]))
+    # Graphing Module 5
+    for model, result in results.items():
+        plt.bar(["quarter-day", "2-hour", "hour", "minute", "second"][list(results.keys()).index(model)], result[-1])
+    plt.title("How Fission Frequency Affects Final Population Size")
+    plt.xlabel("Fission Frequencies")
+    plt.ylabel("Population Size")
+    cprint("Opened Graph. Close the graph to continue...\n", color="grey", attrs=["dark"])
+    plt.show()
+
 def run_module(module_number: int):
     # run the module based on the module number and settings
     if module_number == 0:
@@ -469,7 +487,11 @@ def run_module(module_number: int):
         # CALCULATE & PRINT RESULTS
         calculations = calculate_models(calculation_data, output_unit)
         print_results(*calculations, condition, output_as)
-        show_graph(*calculations, output_as)
+
+        if module_number == 5:
+            module_5_info(calculations[0], models_data[0][1])
+        else:
+            show_graph(*calculations, output_as)
 
         # REPLAY
         replay = listed_input(

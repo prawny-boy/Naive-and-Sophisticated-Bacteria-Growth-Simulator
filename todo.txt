@@ -1,5 +1,1 @@
-implement module 5
-graphing error when doing calculating time for reaching population with 2 models at the same time
-change the labels of lines in a graph to print the model its representing as it just says final, added, start on it (can also do subplots and have one graph for one model)
-add limits to numbers
 for listing output use table instead
