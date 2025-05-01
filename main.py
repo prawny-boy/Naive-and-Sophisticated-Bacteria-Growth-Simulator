@@ -23,7 +23,7 @@ SIMULATION_SETTINGS = [
     },
     {
         "name": "Compare population models",
-        "output": "list",
+        "output": "compare",
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 2,
@@ -39,7 +39,7 @@ SIMULATION_SETTINGS = [
     },
     {
         "name": "Model increases in fission-event frequency",
-        "output": "list",
+        "output": "final",
         "condition": "projected",
         "naive_models": 0,
         "sophisticated_models": 5,
@@ -139,7 +139,7 @@ def calculate_time_to_reach_target(model_type:str, initial_population: float, gr
         time_needed = ceil(time_needed / increment) * increment # this is to ceiling the time needed by the frequency increment
     return TimeAmount(time_needed, rate.get_unit()), increment
 
-def show_graph(results: dict[str, list], opening_population: list[list], added_population: list[list], final_population: list[list], model_configuration: dict[str, list[int|TimeAmount]], output_as: str):
+def show_graph(results: dict[str, list], opening_population: list[list], added_population: list[list], final_population: list[list], model_configuration: dict[str, list[int|TimeAmount]], condition: str, output_as: str):
     if limited_input(prompt="Print Graph?") == "n": return # stop anythign from happening if the user doesnt want to print a graph
     if output_as == "columns":
         columns = ceil(len(results)**0.5)
@@ -155,10 +155,13 @@ def show_graph(results: dict[str, list], opening_population: list[list], added_p
             plt.xlabel(f"Time ({time_amount_of_condition.get_unit()})")
             plt.ylabel("Population Size")
 
-    elif output_as == "list":
+    elif output_as == "list" or output_as == "compare":
         for model, result in results.items():
             increment = model_configuration[model][-2]
-            plt.plot([i*increment for i in range(len(result))], result, label=model)
+            if condition == "population":
+                plt.plot([i*increment for i in range(len(result))], result, label=model)
+            elif condition == "projected":
+                plt.plot([i for i in range(len(result))], result, label=model)
         plt.title("Population Size Over Time")
         plt.xlabel(f"Time ({model_configuration[list(results.keys())[0]][-1].get_unit()})")
         plt.ylabel("Population Size")
@@ -182,7 +185,8 @@ def input_custom_settings():
     output:str = listed_input(
         choices = {"final": "Final Population Size", 
                    "list": "List of Populations over Time", 
-                   "columns": "Columns of Populations over Time (start, added, end)"},
+                   "columns": "Columns of Populations over Time (start, added, end)",
+                   "compare": "Compare Models next to each other"},
         prompt = "Select the output type:",
         return_key=True,
     )
@@ -313,7 +317,7 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
         if condition == "projected":
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [projection_time]) # add a calculation for that model to the list
-            if output_as == "list" or output_as == "columns":
+            elif output_as in ["list", "columns", "compare"]:
                 for _ in range(projection_time.get_quantity() + 1):      
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, projection_time.get_unit())]) # add a calculation to the new model
                     projection_time_count += 1
@@ -322,7 +326,7 @@ def compile_data(models_data: list[list[str|int|TimeAmount]], projection_time:Ti
             time_needed, increment = calculate_time_to_reach_target(*models_data[i], target_population) # models_data[i][2] is the growth rate 
             if output_as == "final":
                 calculation_data[i].append(models_data[i] + [time_needed])
-            elif output_as == "list" or output_as == "columns":
+            elif output_as in ["list", "columns", "compare"]:
                 for _ in range(int(time_needed.get_quantity()/increment) + 1):
                     calculation_data[i].append(models_data[i] + [TimeAmount(projection_time_count, time_needed.get_unit())])
                     projection_time_count += increment
@@ -367,6 +371,23 @@ def print_results(results:dict[str, list], opening_population:list[list], added_
             elif condition == "projected":
                 print(f"Over Time for {model}: {printing_results_list}")
                 print(f"Final Population after {time_amount_of_condition}: {result[-1]}\n")
+    elif output_as == "compare":
+        time_amount_of_condition = model_configuration[list(results.keys())[0]][-1]
+        table_data = []
+        table_data.append([i for i in range(int(time_amount_of_condition.get_quantity()) + 1)])
+        for i in range(len(results)):
+            increment = model_configuration[list(results.keys())[i]][-2] # increment is the fission frequency
+            if condition == "population":
+                skip = round(increment)
+                table_data.append(results[list(results.keys())[i]][::skip])
+            elif condition == "projected":
+                table_data.append(results[list(results.keys())[i]])
+        print_table(
+            data=table_data,
+            table_length=len(table_data[0]) + 1,
+            table_title="Comparison",
+            titles=[f"Time (in {time_amount_of_condition.get_unit()}s)"] + [model for model in results.keys()],
+        )
     elif output_as == "final":
         for model, result in results.items():
             print(f"{model}: {result[-1]}\n")
@@ -491,7 +512,7 @@ def run_module(module_number: int):
         if module_number == 5:
             module_5_info(calculations[0], models_data[0][1])
         else:
-            show_graph(*calculations, output_as)
+            show_graph(*calculations, condition, output_as)
 
         # REPLAY
         replay = listed_input(
