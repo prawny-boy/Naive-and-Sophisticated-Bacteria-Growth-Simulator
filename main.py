@@ -122,6 +122,7 @@ def calculate_population_size(model_type: str, initial_population: float, growth
     if model_type == "naive":
         return initial_population + (rate.get_quantity() * initial_population * projection_time.get_quantity())
     if model_type == "sophisticated":
+        fission_frequency = SECONDS_IN_UNIT[projection_time.get_unit()] / SECONDS_IN_UNIT[growth_rate.get_unit()] * fission_frequency
         rate_over_fission = rate.get_quantity() / float(fission_frequency)
         total_fission_events = projection_time.get_quantity() * fission_frequency
         return initial_population * ((1 + rate_over_fission) ** total_fission_events)

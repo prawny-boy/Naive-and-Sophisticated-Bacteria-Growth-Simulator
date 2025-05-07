@@ -93,3 +93,22 @@ def naive_model_calculation(population, blah, stuff):
     return blah # do calculations
 
 blah = naive_model_calculation(1, 2, 3)
+
+import math
+
+# Naive Model
+I_naive = 1000
+growth_rate_naive = 0.12  # 12% per hour
+hours = 10 * 24  # 10 days
+
+final_naive = I_naive * (1 + growth_rate_naive) ** hours
+print(f"Naive Model Final Value: {final_naive}")
+
+# Sophisticated Model
+I_sophisticated = 1000
+growth_rate_sophisticated = 0.12  # 12% per minute
+minutes = 10 * 24 * 60  # 10 days
+fission_event_frequency = 60  # every hour
+
+final_sophisticated = I_sophisticated * (1 + growth_rate_sophisticated) ** minutes
+print(f"Sophisticated Model Final Value: {final_sophisticated}")
